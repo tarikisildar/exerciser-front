@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'models.dart';
+import 'draw.dart';
+
 
 class BndBox extends StatelessWidget {
   final List<dynamic> results;
@@ -92,6 +94,7 @@ class BndBox extends StatelessWidget {
 
     List<Widget> _renderKeypoints() {
       var lists = <Widget>[];
+      var points = [];
       results.forEach((re) {
         var list = re["keypoints"].values.map<Widget>((k) {
           var _x = k["x"];
@@ -111,6 +114,7 @@ class BndBox extends StatelessWidget {
             x = _x * scaleW;
             y = (_y - difH / 2) * scaleH;
           }
+          points.add([x,y]);
           return Positioned(
             left: x - 6,
             top: y - 6,
@@ -126,11 +130,18 @@ class BndBox extends StatelessWidget {
               ),
             ),
           );
+          
         }).toList();
 
         lists..addAll(list);
       });
-
+      var lines = Line();
+      for(var i = 0; i < points.length-1; i++)
+      {
+        print("asdasdasd");
+        lines.points.add([points[i],points[i+1]]);
+          //Line(points[i],points[i+1]);
+      }
       return lists;
     }
 

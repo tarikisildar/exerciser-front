@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
+import 'draw.dart';
 
 import 'camera.dart';
 import 'bndbox.dart';
