@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_realtime_detection/home.dart';
 import 'dart:math' as math;
 import 'models.dart';
 import 'draw.dart';
@@ -12,8 +15,18 @@ class BndBox extends StatelessWidget {
   final double screenW;
   final String model;
 
+  Map pointCoordinates = Map<String, List<double>>();
+
+  Map pointLinks = { "nose" : ["leftEye","rightEye","leftShoulder","rightShoulder"] , "leftEye" : ["leftEar"] , "rightEye": ["rightEar"],
+   "leftEar" : [], "rightEar" : [], "leftShoulder" : ["leftHip","leftElbow"], "leftElbow": ["leftWrist"], "leftWrist" : [], 
+   "leftHip" : ["leftKnee"], "leftKnee" : ["leftAnkle"],
+   "rightShoulder" : ["rightHip","rightElbow"], "rightElbow": ["rightWrist"], "rightWrist" : [], 
+   "rightHip" : ["rightKnee"], "rightKnee" : ["rightAnkle"] };
+
   BndBox(this.results, this.previewH, this.previewW, this.screenH, this.screenW,
       this.model);
+
+  T cast<T>(x) => x is T ? x : null;
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +58,7 @@ class BndBox extends StatelessWidget {
           if (_y < difH / 2) h -= (difH / 2 - _y) * scaleH;
         }
 
-        return Positioned(
-          left: math.max(0, x),
-          top: math.max(0, y),
-          width: w,
-          height: h,
-          child: Container(
+        var container = Container(
             padding: EdgeInsets.only(top: 5.0, left: 5.0),
             decoration: BoxDecoration(
               border: Border.all(
@@ -66,7 +74,14 @@ class BndBox extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+            
+          );
+        return Positioned(
+          left: math.max(0, x),
+          top: math.max(0, y),
+          width: w,
+          height: h,
+          child: container,
         );
       }).toList();
     }
@@ -92,6 +107,38 @@ class BndBox extends StatelessWidget {
       }).toList();
     }
 
+
+    List<Widget> _renderLines(){
+      var listWidget =  <Widget>[];
+      pointLinks.keys.forEach((element) 
+      {
+
+        if(pointCoordinates[element] == null)
+        {
+          return;
+        }
+        var list = pointLinks[element].map<Widget>((pointName) 
+        {
+
+          var pointTo = pointCoordinates[pointName];
+          var pointFrom = pointCoordinates[element];
+          return  Positioned(
+
+            width: 100,
+            height: 12,           
+            child: Container(
+              child: CustomPaint(
+                painter: DrawLine([pointFrom[0],pointFrom[1],pointTo[0],pointTo[1]]),
+              ),
+            )
+            );
+        }).toList();
+        listWidget..addAll(list);
+        
+      });
+      return listWidget;
+    }
+
     List<Widget> _renderKeypoints() {
       var lists = <Widget>[];
       var points = [];
@@ -115,6 +162,9 @@ class BndBox extends StatelessWidget {
             y = (_y - difH / 2) * scaleH;
           }
           points.add([x,y]);
+          print("1111");
+          print(k["part"]);
+          pointCoordinates[k["part"]] = [cast<double>(x),cast<double>(y)];
           return Positioned(
             left: x - 6,
             top: y - 6,
@@ -122,12 +172,12 @@ class BndBox extends StatelessWidget {
             height: 12,
             child: Container(
               child: Text(
-                "● ${k["part"]}",
-                style: TextStyle(
-                  color: Color.fromRGBO(37, 213, 253, 1.0),
-                  fontSize: 12.0,
+                    "● ${k["part"]}",
+                    style: TextStyle(
+                    color: Color.fromRGBO(37, 213, 253, 1.0),
+                    fontSize: 12.0,
                 ),
-              ),
+              ),              
             ),
           );
           
@@ -135,20 +185,18 @@ class BndBox extends StatelessWidget {
 
         lists..addAll(list);
       });
-      var lines = Line();
-      for(var i = 0; i < points.length-1; i++)
-      {
-        print("asdasdasd");
-        lines.points.add([points[i],points[i+1]]);
-          //Line(points[i],points[i+1]);
-      }
+      lists..addAll(_renderLines());
       return lists;
     }
 
+    
+    var keyPoints = _renderKeypoints();
+    //var lines = _renderLines();
+
     return Stack(
-      children: model == mobilenet
-          ? _renderStrings()
-          : model == posenet ? _renderKeypoints() : _renderBoxes(),
+      children: 
+          keyPoints,
+          
     );
   }
 }

@@ -57,7 +57,7 @@ class _CameraState extends State<Camera> {
                 int endTime = new DateTime.now().millisecondsSinceEpoch;
                 print("Detection took ${endTime - startTime}");
 
-                widget.setRecognitions(recognitions, img.height~/2, img.width);
+                widget.setRecognitions(recognitions, img.height, img.width);
 
                 isDetecting = false;
               });
@@ -120,7 +120,7 @@ class _CameraState extends State<Camera> {
     }
 
     var tmp = MediaQuery.of(context).size;
-    var screenH = tmp.height/2;
+    var screenH = tmp.height;
     var screenW = math.min(tmp.height, tmp.width);
     tmp = controller.value.previewSize;
     var previewH = math.max(tmp.height, tmp.width);
