@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 import 'draw.dart';
@@ -10,6 +11,8 @@ import 'models.dart';
 
 class HomePage extends StatefulWidget {
   final List<CameraDescription> cameras;
+
+  
 
   HomePage(this.cameras);
 
@@ -22,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   int _imageHeight = 0;
   int _imageWidth = 0;
   String _model = "";
+  SavePoints savePoints = SavePoints();
 
   @override
   void initState() {
@@ -61,6 +65,7 @@ class _HomePageState extends State<HomePage> {
       _imageHeight = imageHeight;
       _imageWidth = imageWidth;
     });
+    
   }
 
   @override
@@ -93,7 +98,7 @@ class _HomePageState extends State<HomePage> {
             )
           : Stack(
               children: [
-                Camera(
+                Input(
                   widget.cameras,
                   _model,
                   setRecognitions,
@@ -104,7 +109,8 @@ class _HomePageState extends State<HomePage> {
                     math.min(_imageHeight, _imageWidth),
                     screen.height,
                     screen.width,
-                    _model),
+                    _model,
+                    savePoints),
               ],
             ),
     );

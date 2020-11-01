@@ -7,18 +7,18 @@ import 'models.dart';
 
 typedef void Callback(List<dynamic> list, int h, int w);
 
-class Camera extends StatefulWidget {
+class Input extends StatefulWidget {
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
   final String model;
 
-  Camera(this.cameras, this.model, this.setRecognitions);
+  Input(this.cameras, this.model, this.setRecognitions);
 
   @override
   _CameraState createState() => new _CameraState();
 }
 
-class _CameraState extends State<Camera> {
+class _CameraState extends State<Input> {
   CameraController controller;
   bool isDetecting = false;
 
@@ -31,7 +31,7 @@ class _CameraState extends State<Camera> {
     } else {
       controller = new CameraController(
         widget.cameras[0],
-        ResolutionPreset.low
+        ResolutionPreset.high
       );
       controller.initialize().then((_) {
         if (!mounted) {

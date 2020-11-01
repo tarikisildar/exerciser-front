@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/home.dart';
+import 'package:flutter_realtime_detection/savePoints.dart';
+import 'package:tuple/tuple.dart';
 import 'dart:math' as math;
 import 'models.dart';
 import 'draw.dart';
@@ -14,6 +16,7 @@ class BndBox extends StatelessWidget {
   final double screenH;
   final double screenW;
   final String model;
+  final SavePoints savePoints;
 
   Map pointCoordinates = Map<String, List<double>>();
 
@@ -24,7 +27,7 @@ class BndBox extends StatelessWidget {
    "rightHip" : ["rightKnee"], "rightKnee" : ["rightAnkle"] };
 
   BndBox(this.results, this.previewH, this.previewW, this.screenH, this.screenW,
-      this.model);
+      this.model,this.savePoints);
 
   T cast<T>(x) => x is T ? x : null;
 
@@ -142,12 +145,14 @@ class BndBox extends StatelessWidget {
     List<Widget> _renderKeypoints() {
       var lists = <Widget>[];
       var points = [];
+      List<Point> framePoints = [];
       results.forEach((re) {
         var list = re["keypoints"].values.map<Widget>((k) {
           var _x = k["x"];
           var _y = k["y"];
+          
           var scaleW, scaleH, x, y;
-
+          framePoints.add(Point(_x, _y));
           if (screenH / screenW > previewH / previewW) {
             scaleW = screenH / previewH * previewW;
             scaleH = screenH;
@@ -161,9 +166,6 @@ class BndBox extends StatelessWidget {
             x = _x * scaleW;
             y = (_y - difH / 2) * scaleH;
           }
-          points.add([x,y]);
-          print("1111");
-          print(k["part"]);
           pointCoordinates[k["part"]] = [cast<double>(x),cast<double>(y)];
           return Positioned(
             left: x - 6,
@@ -186,12 +188,12 @@ class BndBox extends StatelessWidget {
         lists..addAll(list);
       });
       lists..addAll(_renderLines());
+      savePoints.addResults(framePoints);
       return lists;
     }
 
     
     var keyPoints = _renderKeypoints();
-    //var lines = _renderLines();
 
     return Stack(
       children: 
