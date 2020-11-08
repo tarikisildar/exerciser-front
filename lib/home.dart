@@ -103,6 +103,7 @@ class _HomePageState extends State<HomePage> {
                   _model,
                   setRecognitions,
                 ),
+                savePoints,
                 BndBox(
                     _recognitions == null ? [] : _recognitions,
                     math.max(_imageHeight, _imageWidth),
