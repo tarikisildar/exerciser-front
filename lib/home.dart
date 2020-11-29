@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
   {
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
     print(name);
-    return http.post("https://exerciser-backend.herokuapp.com/similarity/compare-with-reference-name/$name",
+    return http.post("https://exerciser-backend.herokuapp.com/similarity-single/$name",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<http.Response> getExercises()
   {
-    return http.get("https://exerciser-backend.herokuapp.com/users/get-exercise-data");
+    return http.get("https://exerciser-backend.herokuapp.com/exercises");
   }
 
   void getExerciseData() async
