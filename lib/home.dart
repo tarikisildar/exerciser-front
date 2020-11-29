@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   int _imageHeight = 0;
   int _imageWidth = 0;
   String _currentExcersise = "";
+  dynamic curExerciseFull;
   String _model = posenet;
   SavePoints savePoints;
 
@@ -68,7 +69,8 @@ class _HomePageState extends State<HomePage> {
     savePoints = svPoints;
   }
   onSelect(excersise) {
-    _currentExcersise = excersise;
+    _currentExcersise = excersise["points"];
+    curExerciseFull = excersise;
     loadModel();
   }
 
@@ -91,8 +93,9 @@ class _HomePageState extends State<HomePage> {
   Future<http.Response> getDistance(String jsonName,List<List<Point>> resultsList)
   {
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
-    print(name);
-    return http.post("https://exerciser-backend.herokuapp.com/similarity-single/$name",
+    var repeat = curExerciseFull["repeat"];
+    print(repeat);
+    return http.post("https://exerciser-backend.herokuapp.com/similarity-single/$name?repeat=$repeat",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -166,7 +169,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Size screen = MediaQuery.of(context).size;
     final Size size = MediaQuery.of(context).size;
     final double categoryHeight = size.height*0.30;
     return SafeArea(
@@ -220,7 +222,7 @@ class _HomePageState extends State<HomePage> {
                           onTap : () {  
                             setState(() {
                       
-                              onSelect(exercisesDataRaw[index]["points"]);
+                              onSelect(exercisesDataRaw[index]);
                               
                             });
                             },
@@ -270,8 +272,8 @@ class _HomePageState extends State<HomePage> {
                     _recognitions == null ? [] : _recognitions,
                     math.max(_imageHeight, _imageWidth),
                     math.min(_imageHeight, _imageWidth),
-                    screen.height,
-                    screen.width,
+                    size.height,
+                    size.width,
                     _model,
                     savePoints),
               ],

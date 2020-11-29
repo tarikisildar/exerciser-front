@@ -20,8 +20,8 @@ class BndBox extends StatelessWidget {
 
   Map pointCoordinates = Map<String, List<double>>();
 
-  Map pointLinks = { "nose" : ["leftEye","rightEye","leftShoulder","rightShoulder"] , "leftEye" : ["leftEar"] , "rightEye": ["rightEar"],
-   "leftEar" : [], "rightEar" : [], "leftShoulder" : ["leftHip","leftElbow"], "leftElbow": ["leftWrist"], "leftWrist" : [], 
+  Map pointLinks = { "nose" : [] , "leftEye" : [] , "rightEye": [],
+   "leftEar" : [], "rightEar" : [], "leftShoulder" : ["leftHip","leftElbow","rightShoulder"], "leftElbow": ["leftWrist"], "leftWrist" : [], 
    "leftHip" : ["leftKnee"], "leftKnee" : ["leftAnkle"],
    "rightShoulder" : ["rightHip","rightElbow"], "rightElbow": ["rightWrist"], "rightWrist" : [], 
    "rightHip" : ["rightKnee"], "rightKnee" : ["rightAnkle"] };
@@ -166,10 +166,12 @@ class BndBox extends StatelessWidget {
             x = _x * scaleW;
             y = (_y - difH / 2) * scaleH;
           }
+          y-=48;
+          
           pointCoordinates[k["part"]] = [cast<double>(x),cast<double>(y)];
           return Positioned(
             left: x - 6,
-            top: y - 6,
+            top: y -6,
             width: 100,
             height: 12,
             child: Container(
