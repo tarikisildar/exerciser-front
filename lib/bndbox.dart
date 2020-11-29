@@ -152,7 +152,7 @@ class BndBox extends StatelessWidget {
           var _y = k["y"];
           
           var scaleW, scaleH, x, y;
-          framePoints.add(Point(_x, _y));
+          framePoints.add(Point(k["part"],_x, _y));
           if (screenH / screenW > previewH / previewW) {
             scaleW = screenH / previewH * previewW;
             scaleH = screenH;

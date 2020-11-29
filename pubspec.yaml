@@ -20,6 +20,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
+  http: ^0.12.2
 
 dev_dependencies:
   flutter_test:
@@ -47,8 +48,11 @@ flutter:
   assets:
    - assets/posenet_mv1_075_float_from_checkpoints.tflite
    - assets/posenet_model.tflite
+   - assets/exercises/
 
-  # An image asset can refer to one or more resolution-specific "variants", see
+   - assets/exerciseImages/
+   - assets/exerciseVideos/
+   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.
 
   # For details regarding adding assets from package dependencies, see
