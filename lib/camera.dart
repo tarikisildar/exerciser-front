@@ -10,9 +10,13 @@ typedef void Callback(List<dynamic> list, int h, int w);
 class Input extends StatefulWidget {
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
+  final Function posenetOver;
+  final Function checkRecord;
   final String model;
+  bool isRecording = false;
 
-  Input(this.cameras, this.model, this.setRecognitions);
+  
+  Input(this.cameras, this.model, this.checkRecord,this.setRecognitions,this.posenetOver);
 
   @override
   _CameraState createState() => new _CameraState();
@@ -21,6 +25,8 @@ class Input extends StatefulWidget {
 class _CameraState extends State<Input> {
   CameraController controller;
   bool isDetecting = false;
+
+  List<CameraImage> frames = new List<CameraImage>();
 
   @override
   void initState() {
@@ -40,34 +46,53 @@ class _CameraState extends State<Input> {
         setState(() {});
 
         controller.startImageStream((CameraImage img) {
-          if (!isDetecting) {
-            isDetecting = true;
+            if(widget.checkRecord() != widget.isRecording)
+            {
+              record();
+              print(widget.isRecording);
+              print(widget.checkRecord());
+              widget.isRecording = widget.checkRecord();
+              
+            }
+            if (widget.isRecording) 
+            {
+              frames.add(img); 
+            }
+          
+        });
+      });
+    }
+  }
 
-            int startTime = new DateTime.now().millisecondsSinceEpoch;
-
-            if (widget.model == mobilenet) {
-              Tflite.runModelOnFrame(
-                bytesList: img.planes.map((plane) {
+  void record()
+  {
+    if(widget.isRecording)
+    {
+      finishRecord();
+      frames.clear();
+    }
+    //widget.isRecording =! widget.isRecording;
+    
+  }
+  void finishRecord(){
+    int ix = 0;
+    int startTime = new DateTime.now().millisecondsSinceEpoch;
+    while (ix < frames.length){
+      if(new DateTime.now().millisecondsSinceEpoch - startTime > 1000){
+        ix++;
+        continue;
+      }
+      if(!isDetecting)
+      {
+        startTime = new DateTime.now().millisecondsSinceEpoch;
+        print(frames.length);
+        isDetecting = true;
+        Tflite.runPoseNetOnFrame(
+                bytesList: frames[ix].planes.map((plane) {
                   return plane.bytes;
                 }).toList(),
-                imageHeight: img.height,
-                imageWidth: img.width,
-                numResults: 2,
-              ).then((recognitions) {
-                int endTime = new DateTime.now().millisecondsSinceEpoch;
-                print("Detection took ${endTime - startTime}");
-
-                widget.setRecognitions(recognitions, img.height, img.width);
-
-                isDetecting = false;
-              });
-            } else if (widget.model == posenet) {
-              Tflite.runPoseNetOnFrame(
-                bytesList: img.planes.map((plane) {
-                  return plane.bytes;
-                }).toList(),
-                imageHeight: img.height,
-                imageWidth: img.width,
+                imageHeight: frames[ix].height,
+                imageWidth: frames[ix].width,
                 numResults: 1,
                 asynch: true,
                 threshold: 0.7,
@@ -76,34 +101,13 @@ class _CameraState extends State<Input> {
                 int endTime = new DateTime.now().millisecondsSinceEpoch;
                 print("Detection took ${endTime - startTime}");
 
-                widget.setRecognitions(recognitions, img.height, img.width);
-
+                widget.setRecognitions(recognitions, frames[ix].height, frames[ix].width);
+                print(isDetecting);
                 isDetecting = false;
+                ix++;
               });
-            } else {
-              Tflite.detectObjectOnFrame(
-                bytesList: img.planes.map((plane) {
-                  return plane.bytes;
-                }).toList(),
-                model: widget.model == yolo ? "YOLO" : "SSDMobileNet",
-                imageHeight: img.height,
-                imageWidth: img.width,
-                imageMean: widget.model == yolo ? 0 : 127.5,
-                imageStd: widget.model == yolo ? 255.0 : 127.5,
-                numResultsPerClass: 1,
-                threshold: widget.model == yolo ? 0.2 : 0.4,
-              ).then((recognitions) {
-                int endTime = new DateTime.now().millisecondsSinceEpoch;
-                print("Detection took ${endTime - startTime}");
+      }
 
-                widget.setRecognitions(recognitions, img.height, img.width);
-
-                isDetecting = false;
-              });
-            }
-          }
-        });
-      });
     }
   }
 

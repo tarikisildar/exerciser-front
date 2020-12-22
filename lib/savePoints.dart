@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 
 import 'customDialogBox.dart';
 import 'home.dart';
-
+import 'camera.dart';
 
 class Point
 {
@@ -74,12 +74,14 @@ class SavePoints extends StatefulWidget
       else
       {
         print(response.body);
-        score = jsonDecode(response.body)["match"][0]["distance"];
+        //score = jsonDecode(response.body)["match"][0]["distance"];
+        var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
+        String scoreSt = scoreLis.toString();
         showDialog(context: context,
                     builder: (BuildContext context){
                     return CustomDialogBox(
                       title: "Congratulations",
-                      descriptions: "You finished the exercise with the distance of $score",
+                      descriptions: "You finished the exercise with the distance of $scoreSt",
                       text1: "Try again",
                       text2: "Ok",
                       exitFunction: exitFunction,
@@ -87,10 +89,9 @@ class SavePoints extends StatefulWidget
                     }
                   );
       }
-      //_writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
+      _writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
       resultsList.clear();
     }
-    isRecording = !isRecording;
   }
 
 
@@ -150,10 +151,10 @@ class RecordState extends State<SavePoints>
                     RaisedButton(
                       elevation: 5.0,
                       padding: EdgeInsets.all(15.0),
-                      color: _isRecording ? Colors.red : Colors.blue,
-                      child: Text(_isRecording ? "Finish" : "Start"),
+                      color: widget.isRecording ? Colors.red : Colors.blue,
+                      child: Text(widget.isRecording ? "Finish" : "Start"),
                       
-                      onPressed:() => setState(() {widget.onRecord(context); _isRecording = !_isRecording;} )
+                      onPressed:() => setState(() { widget.isRecording = !widget.isRecording;} )
                     ),
                   ],
                 ),

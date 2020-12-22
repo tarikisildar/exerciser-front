@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
   String _model = posenet;
   SavePoints savePoints;
 
-  bool closeTopContainer = false;
+  bool closeTopContainer = true;
   double topContainer = 0;
   ScrollController controller = ScrollController();
   List<Widget> exercisesData = [];
@@ -60,9 +60,6 @@ class _HomePageState extends State<HomePage> {
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-
-
-
     print(res);
   }
   setSavePoints(SavePoints svPoints){
@@ -84,6 +81,14 @@ class _HomePageState extends State<HomePage> {
     });
     
   }
+  bool checkRecording()
+  {
+    return savePoints.isRecording;
+  }
+
+  posenetOver(){
+    savePoints.onRecord(context);
+  }
 
   Future<http.Response> getDistanceOfCurrent(List<List<Point>> resultsList)
   {
@@ -92,6 +97,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<http.Response> getDistance(String jsonName,List<List<Point>> resultsList)
   {
+
+
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
     var repeat = curExerciseFull["repeat"];
     print(repeat);
@@ -265,7 +272,9 @@ class _HomePageState extends State<HomePage> {
                 Input(
                   widget.cameras,
                   _model,
+                  checkRecording,
                   setRecognitions,
+                  posenetOver
                 ),
                 savePoints,
                 BndBox(
