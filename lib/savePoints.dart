@@ -55,7 +55,7 @@ class SavePoints extends StatefulWidget
     if(isRecording)
     {
       recordCounter++;
-      double score = 0;
+      String score = "";
       http.Response response = await finishExercise(resultsList);
       if(response.statusCode != 200){
         showDialog(context: context,
@@ -74,12 +74,19 @@ class SavePoints extends StatefulWidget
       else
       {
         print(response.body);
-        score = jsonDecode(response.body)["match"][0]["distance"];
+        var matches = jsonDecode(response.body)["match"];
+        for(var match in matches)
+        {
+          score += "name: " + match ["name"] + " ";
+          score += "avg:" +  match["avg"].toString() + "\n";
+        }
+
+        
         showDialog(context: context,
                     builder: (BuildContext context){
                     return CustomDialogBox(
                       title: "Congratulations",
-                      descriptions: "You finished the exercise with the distance of $score",
+                      descriptions: score,
                       text1: "Try again",
                       text2: "Ok",
                       exitFunction: exitFunction,

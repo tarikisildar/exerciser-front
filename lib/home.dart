@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
   String _model = posenet;
   SavePoints savePoints;
 
-  bool closeTopContainer = false;
+  bool closeTopContainer = true;
   double topContainer = 0;
   ScrollController controller = ScrollController();
   List<Widget> exercisesData = [];
@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
     var repeat = curExerciseFull["repeat"];
     print(repeat);
-    return http.post("https://exerciser-backend.herokuapp.com/similarity-single/$name?repeat=$repeat",
+    return http.post("http://157.230.108.121:8080/similarity-all/?repeat=$repeat",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<http.Response> getExercises()
   {
-    return http.get("https://exerciser-backend.herokuapp.com/exercises");
+    return http.get("http://157.230.108.121:8080/exercises");
   }
 
   void getExerciseData() async

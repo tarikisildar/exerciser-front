@@ -47,7 +47,6 @@ flutter:
   #  - images/a_dot_ham.jpeg
   assets:
    - assets/posenet_mv1_075_float_from_checkpoints.tflite
-   - assets/posenet_model.tflite
    - assets/exercises/
 
    - assets/exerciseImages/
