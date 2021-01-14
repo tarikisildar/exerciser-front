@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:speech_recognition/speech_recognition.dart';
 
 import 'customDialogBox.dart';
 import 'home.dart';
@@ -28,6 +29,23 @@ class Point
       };
 }
 
+const languages = const [
+  const Language('English', 'en_US'),
+  const Language('Francais', 'fr_FR'),
+  const Language('Pусский', 'ru_RU'),
+  const Language('Italiano', 'it_IT'),
+  const Language('Español', 'es_ES'),
+];
+
+class Language {
+  final String name;
+  final String code;
+
+  const Language(this.name, this.code);
+}
+
+
+
 class SavePoints extends StatefulWidget
 {
   
@@ -38,6 +56,7 @@ class SavePoints extends StatefulWidget
   List<List<Point>> resultsList = [];
   bool isRecording = false;
   int recordCounter = 0;
+
   
   
 
@@ -52,10 +71,10 @@ class SavePoints extends StatefulWidget
   void onRecord(BuildContext context) async
   {
     print(isRecording);
-    if(isRecording)
+    if(!isRecording)
     {
       recordCounter++;
-      double score = 0;
+      String score = "";
       http.Response response = await finishExercise(resultsList);
       if(response.statusCode != 200){
         showDialog(context: context,
@@ -74,14 +93,32 @@ class SavePoints extends StatefulWidget
       else
       {
         print(response.body);
+        var matches = jsonDecode(response.body)["match"];
+
+        bool isCorrect = false;
+        int count = 0;
+        int repeat = 0;
+
+        for(var match in matches)
+        {
+          isCorrect = match["isCorrect"];
+          count = match["count"];
+          repeat = match["repeat"];
+        }
+
         //score = jsonDecode(response.body)["match"][0]["distance"];
-        var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
-        String scoreSt = scoreLis.toString();
+        //var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
+        //String scoreSt = scoreLis.toString();
+
+        String title;
+        if(isCorrect) title = "Congratulations"; else title = "You Failed";
+        
+
         showDialog(context: context,
                     builder: (BuildContext context){
                     return CustomDialogBox(
-                      title: "Congratulations",
-                      descriptions: "You finished the exercise with the distance of $scoreSt",
+                      title: title,
+                      descriptions: "You have made $count repeats",
                       text1: "Try again",
                       text2: "Ok",
                       exitFunction: exitFunction,
@@ -90,6 +127,7 @@ class SavePoints extends StatefulWidget
                   );
       }
       _writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
+      _writeToFile(response.body, recordCounter.toString()+ ".txt");
       resultsList.clear();
     }
   }
@@ -140,6 +178,43 @@ Future get _localPath async {
 class RecordState extends State<SavePoints>
 {
   bool _isRecording = false;
+
+  SpeechRecognition _speech;
+  bool _speechRecognitionAvailable = false;
+  bool _isListening = false;
+
+  Language selectedLang = languages.first;
+
+  String transcription = '';
+
+  
+  final String startingWord = "başla";
+  final String finishWord = "bitir";
+
+  @override
+  initState() {
+    super.initState();
+    activateSpeechRecognizer();
+   
+  }
+
+  void activateSpeechRecognizer() {
+    print('_MyAppState.activateSpeechRecognizer... ');
+    _speech = new SpeechRecognition();
+    _speech.setAvailabilityHandler(onSpeechAvailability);
+    _speech.setCurrentLocaleHandler(onCurrentLocale);
+    _speech.setRecognitionStartedHandler(onRecognitionStarted);
+    _speech.setRecognitionResultHandler(onRecognitionResult);
+    _speech.setRecognitionCompleteHandler(onRecognitionComplete);
+    _speech
+        .activate()
+        .then((res) { setState(() => _speechRecognitionAvailable = res);
+        start();
+        });
+  }
+
+
+
   @override
     Widget build(BuildContext context) {
       return Container(
@@ -154,12 +229,65 @@ class RecordState extends State<SavePoints>
                       color: widget.isRecording ? Colors.red : Colors.blue,
                       child: Text(widget.isRecording ? "Finish" : "Start"),
                       
-                      onPressed:() => setState(() { widget.isRecording = !widget.isRecording;} )
+                      onPressed:() => setState(() { widget.isRecording = !widget.isRecording;})
                     ),
+                    
                   ],
                 ),
       );
     }
+
+  Widget _buildButton({String label, VoidCallback onPressed}) => new Padding(
+      padding: new EdgeInsets.all(12.0),
+      child: new RaisedButton(
+        color: Colors.cyan.shade600,
+        onPressed: onPressed,
+        child: new Text(
+          label,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ));
+
+
+  void start() => _speech
+    .listen(locale: selectedLang.code)
+    .then((result) => print('_MyAppState.start => result $result'));
+
+  void cancel() =>
+      _speech.cancel().then((result) => setState(() => _isListening = result));
+
+  void stop() => _speech.stop().then((result) {
+        setState(() => _isListening = result);
+      });
+
+  void onSpeechAvailability(bool result) =>
+      setState(() => _speechRecognitionAvailable = result);
+
+  void onCurrentLocale(String locale) {
+    print('_MyAppState.onCurrentLocale... $locale');
+    setState(
+        () => selectedLang = languages.firstWhere((l) => l.code == locale));
+  }
+
+  void onRecognitionStarted() => setState(() => _isListening = true);
+
+  void onRecognitionResult(String text) { 
+    setState(() => transcription = text);
+    var words = text.split(" ");
+    String lastWord = words[words.length-1].toLowerCase();
+    if(lastWord == startingWord)
+    {
+      widget.isRecording = true;
+    }
+    if(lastWord == finishWord)
+    {
+      widget.isRecording = false;
+    }
     
+  }
+
+  void onRecognitionComplete() => setState(() => _isListening = false);
+
+  void errorHandler() => activateSpeechRecognizer();
 }
 

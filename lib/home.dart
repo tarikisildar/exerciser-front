@@ -7,6 +7,8 @@ import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
+import 'package:speech_recognition/speech_recognition.dart';
+
 
 import 'draw.dart';
 
@@ -102,7 +104,7 @@ class _HomePageState extends State<HomePage> {
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
     var repeat = curExerciseFull["repeat"];
     print(repeat);
-    return http.post("https://exerciser-backend.herokuapp.com/similarity-single/$name?repeat=$repeat",
+    return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -112,7 +114,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<http.Response> getExercises()
   {
-    return http.get("https://exerciser-backend.herokuapp.com/exercises");
+    return http.get("http://157.230.108.121:8080/exercises");
   }
 
   void getExerciseData() async

@@ -46,9 +46,10 @@ class _CameraState extends State<Input> {
         setState(() {});
 
         controller.startImageStream((CameraImage img) {
+
             if(widget.checkRecord() != widget.isRecording)
             {
-              record();
+              record(widget.isRecording);
               print(widget.isRecording);
               print(widget.checkRecord());
               widget.isRecording = widget.checkRecord();
@@ -64,30 +65,29 @@ class _CameraState extends State<Input> {
     }
   }
 
-  void record()
-  {
-    if(widget.isRecording)
+  void record(bool isRec)
+  async{
+    print(widget.isRecording);
+    if(isRec)
     {
-      finishRecord();
+      
+      await finishRecord();
+      widget.posenetOver();
       frames.clear();
     }
     //widget.isRecording =! widget.isRecording;
     
   }
-  void finishRecord(){
+   Future<void>  finishRecord() async{
     int ix = 0;
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     while (ix < frames.length){
-      if(new DateTime.now().millisecondsSinceEpoch - startTime > 1000){
-        ix++;
-        continue;
-      }
       if(!isDetecting)
       {
+        
         startTime = new DateTime.now().millisecondsSinceEpoch;
-        print(frames.length);
         isDetecting = true;
-        Tflite.runPoseNetOnFrame(
+        await Tflite.runPoseNetOnFrame(
                 bytesList: frames[ix].planes.map((plane) {
                   return plane.bytes;
                 }).toList(),
@@ -100,12 +100,11 @@ class _CameraState extends State<Input> {
               ).then((recognitions) {
                 int endTime = new DateTime.now().millisecondsSinceEpoch;
                 print("Detection took ${endTime - startTime}");
-
                 widget.setRecognitions(recognitions, frames[ix].height, frames[ix].width);
-                print(isDetecting);
                 isDetecting = false;
-                ix++;
+                
               });
+          ix+=3;
       }
 
     }
