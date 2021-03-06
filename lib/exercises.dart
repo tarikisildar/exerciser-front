@@ -1,14 +1,21 @@
 import 'dart:convert';
+import 'package:flutter_realtime_detection/makeExercise.dart';
+import 'package:flutter_realtime_detection/models.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
+import 'package:tflite/tflite.dart';
+
 
 
 class ExercisesPage extends StatefulWidget
 
 {
+  final List<CameraDescription> cameras;
+
+  ExercisesPage(this.cameras);
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
@@ -25,58 +32,19 @@ class ExersisesState extends State<ExercisesPage>
   ScrollController controller = ScrollController();
   double topContainer = 0;
 
+
+
   SavePoints savePoints;
 
-  String _currentExcersise = "";
+  String currentExcersise = "";
+  String model = posenet;
 
-
-
-
-  @override
-  void initState() {
-    getExerciseData();
-    setSavePoints(SavePoints(exitFunction: exitToMenu,finishExercise: getDistanceOfCurrent));
-    controller.addListener(() {
-
-      double value = controller.offset/119;
-
-      setState(() {
-        topContainer = value;
-        //closeTopContainer = controller.offset > 50;
-      });
-    });
-    super.initState();
-  }
-  Future<http.Response> getDistanceOfCurrent(List<List<Point>> resultsList)
-  {
-      return getDistance(_currentExcersise, resultsList);
-  }
-
-  Future<http.Response> getDistance(String jsonName,List<List<Point>> resultsList)
-  {
-
-
-    var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
-    var repeat = curExerciseFull["repeat"];
-    print(repeat);
-    return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
-    headers: <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
-    body: jsonEncode(resultsList)
-    );
-  }
-
-
-  setSavePoints(SavePoints svPoints){
-    savePoints = svPoints;
-  }
-
-  exitToMenu() => _currentExcersise = "";
+  
+  bool closeTopContainer = true;
 
 
   Future<http.Response> getExercises()
-  async {
+  {
     return http.get("http://157.230.108.121:8080/exercises");
   }
 
@@ -125,10 +93,10 @@ class ExersisesState extends State<ExercisesPage>
                     )
                   ],
                 ),
-                Image.asset(
+                /*Image.asset(
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
-                )
+                )*/
               ],
             ),
           )));
@@ -139,10 +107,94 @@ class ExersisesState extends State<ExercisesPage>
 
   }
 
+  loadModel() async {
+    String res;
+        res = await Tflite.loadModel(
+            model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
+            numThreads: 4
+            );
+    print(res);
+  }
+
+  onSelect(excersise) {
+    currentExcersise = excersise["points"];
+    curExerciseFull = excersise;
+    loadModel();
+    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,widget.cameras,model)));
+    
+  }
+
+
+  @override
+  void initState() {
+    getExerciseData();
+    controller.addListener(() {
+
+      double value = controller.offset/119;
+
+      setState(() {
+        topContainer = value;
+        //closeTopContainer = controller.offset > 50;
+      });
+    });
+    super.initState();
+  }
+  
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    final Size size = MediaQuery.of(context).size;
+    final double categoryHeight = size.height*0.30;
+    return Container(
+          height: size.height,
+          child: Column(
+            children: <Widget>[
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: closeTopContainer?0:1,
+                child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: size.width,
+                    alignment: Alignment.topCenter,
+                    height: closeTopContainer?0:categoryHeight,
+                    ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Expanded(
+                  child: ListView.builder(
+                    controller: controller,
+                      itemCount: exercisesData.length,
+                      physics: BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        double scale = 1.0;
+                        return GestureDetector(
+                          onTap : () {  
+                            setState(() {
+                      
+                              onSelect(exercisesDataRaw[index]);
+                              
+                            });
+                            },
+                            child: Opacity(
+                              opacity: scale,
+                              child:
+                          
+                              Transform(
+                                transform:  Matrix4.identity()..scale(scale,scale),
+                                alignment: Alignment.bottomCenter,
+                                child: Align(
+                                    heightFactor: 1,
+                                    alignment: Alignment.topCenter,
+                                    child: exercisesData[index]),
+                                ),
+                              ),
+                        );
+                      })),
+            ],
+          ),
+        );
   }
 
 }
