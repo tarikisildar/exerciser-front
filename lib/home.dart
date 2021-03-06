@@ -1,22 +1,9 @@
-import 'dart:convert';
+
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
-import 'package:flutter_realtime_detection/makeExercise.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
-import 'package:tflite/tflite.dart';
-import 'dart:math' as math;
-import 'package:http/http.dart' as http;
-import 'package:speech_recognition/speech_recognition.dart';
 
-
-import 'draw.dart';
-
-import 'camera.dart';
-import 'bndbox.dart';
-import 'models.dart';
 
 class HomePage extends StatefulWidget 
 {
@@ -30,43 +17,131 @@ class HomePage extends StatefulWidget
 
 class _HomePageState extends State<HomePage> 
 {
-  List<dynamic> _recognitions;
+  bool isSideBarActive = false;
+  double screenHeight;
+  double screenWidth;
+  String currentPageName = "My Workout Plan";
+  Widget currentPage;
 
 
-  ScrollController controller = ScrollController();
-  List<Widget> exercisesData = [];
-  List<dynamic> exercisesDataRaw;
-
-
-
-  
-
+  final Duration duration = const Duration(milliseconds: 100);
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child : 
-        Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          elevation: 0,
+    Size size = MediaQuery.of(context).size;
+    screenHeight = size.height;
+    screenWidth = size.width;
+    return Scaffold(
+      backgroundColor : Colors.white,
+      body: Stack(
+        children: <Widget>[
+          sideBarMenu(context),
+          dashboard(context),
+        ],
+      ),
+    );
+    
+  }
+  Widget dashboard(context){
+    
+    return AnimatedPositioned(
+      duration: duration,
+      top: 0,
+      bottom: 0,
+      left: isSideBarActive ? 0.2 * screenWidth : 0,
+      right: isSideBarActive ? -0.8 *screenWidth : 0,
+      child: SafeArea(
+        child : 
+          Scaffold(
           backgroundColor: Colors.white,
-          leading: Icon(
-            Icons.menu,
-            color: Colors.black,
-          ),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.search, color: Colors.black),
-              onPressed: () {},
+          appBar: AppBar(
+            
+            title: new Text(currentPageName, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            leading: IconButton(
+              icon: Icon(
+                Icons.menu,
+                color: Colors.black,),
+                onPressed: () {setState(() {
+                  isSideBarActive = !isSideBarActive;
+                }); }
             ),
-            IconButton(
-              icon: Icon(Icons.person, color: Colors.black),
-              onPressed: () {},
-            )
-          ],
-        ),
-      body: ExercisesPage(widget.cameras)
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.search, color: Colors.black),
+                onPressed: () {},
+              ),
+            ],
+          ),
+        body: currentPage
+        )
       )
     );
   }
+
+  Widget sideBarMenu(context)
+    {
+      return SafeArea(
+        child:
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, top: 16),
+            child:Align(
+              alignment: Alignment.topLeft,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.person_outlined, color: Colors.black),
+                      onPressed: () {
+                        setState(() {
+                          currentPageName = "My Profile";
+                          isSideBarActive = false;
+                        });
+                        
+                      }
+                    ),
+                    SizedBox(height:10),
+                    IconButton(
+                      icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
+                      onPressed: () {
+                        setState(() {
+                          currentPageName = "My Workout Plan";
+                          isSideBarActive = false;
+                        });
+                      }
+                    ),
+                    SizedBox(height:10),
+                    IconButton(
+                      icon: Icon(Icons.history_outlined, color: Colors.black),
+                      onPressed: () {
+                        setState(() {
+                          currentPageName = "My Workouts";
+                          isSideBarActive = false;
+                        });
+                        
+                      }
+                    ),
+                    SizedBox(height:10),
+                    
+                    IconButton(
+                      icon: Icon(Icons.fitness_center_outlined, color: Colors.black),
+                      onPressed: () {
+                        setState(() {
+                          currentPageName = "Explore";
+                          isSideBarActive = false;
+                          currentPage = ExercisesPage(widget.cameras);
+                        });
+                        
+                      }
+                    ),
+                  ]
+                )
+            )
+          )
+      );
+    }
 }
+

@@ -104,7 +104,6 @@ class ExersisesState extends State<ExercisesPage>
     setState(() {
       exercisesData = listItems;
     });
-
   }
 
   loadModel() async {
