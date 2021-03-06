@@ -57,6 +57,29 @@ class _CameraState extends State<Input> {
             }
             if (widget.isRecording) 
             {
+              if(!isDetecting)
+                {
+                 //startTime = new DateTime.now().millisecondsSinceEpoch;
+                  isDetecting = true;
+                  Tflite.runPoseNetOnFrame(
+                          bytesList: img.planes.map((plane) {
+                            return plane.bytes;
+                          }).toList(),
+                          imageHeight: img.height,
+                          imageWidth: img.width,
+                          numResults: 1,
+                          asynch: true,
+                          threshold: 0.7,
+                          nmsRadius: 20
+                        ).then((recognitions) {
+                          int endTime = new DateTime.now().millisecondsSinceEpoch;
+                          //print("Detection took ${endTime - startTime}");
+                          widget.setRecognitions(recognitions, img.height, img.width);
+                          isDetecting = false;
+                          
+                        });
+                    
+                }
               frames.add(img); 
             }
           
@@ -81,33 +104,6 @@ class _CameraState extends State<Input> {
    Future<void>  finishRecord() async{
     int ix = 0;
     int startTime = new DateTime.now().millisecondsSinceEpoch;
-    while (ix < frames.length){
-      if(!isDetecting)
-      {
-        
-        startTime = new DateTime.now().millisecondsSinceEpoch;
-        isDetecting = true;
-        await Tflite.runPoseNetOnFrame(
-                bytesList: frames[ix].planes.map((plane) {
-                  return plane.bytes;
-                }).toList(),
-                imageHeight: frames[ix].height,
-                imageWidth: frames[ix].width,
-                numResults: 1,
-                asynch: true,
-                threshold: 0.7,
-                nmsRadius: 20
-              ).then((recognitions) {
-                int endTime = new DateTime.now().millisecondsSinceEpoch;
-                print("Detection took ${endTime - startTime}");
-                widget.setRecognitions(recognitions, frames[ix].height, frames[ix].width);
-                isDetecting = false;
-                
-              });
-          ix+=3;
-      }
-
-    }
   }
 
   @override

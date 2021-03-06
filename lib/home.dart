@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   dynamic curExerciseFull;
   String _model = posenet;
   SavePoints savePoints;
+  bool isDebug = false;
 
   bool closeTopContainer = true;
   double topContainer = 0;
@@ -287,6 +288,25 @@ class _HomePageState extends State<HomePage> {
                     size.width,
                     _model,
                     savePoints),
+                Container(
+                  alignment: Alignment(0.0, 0.9),
+                  child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Switch(
+                    value: isDebug,
+                    onChanged: (value){
+                      setState(() {
+                        isDebug=value;
+                      });
+                    },
+                    activeTrackColor: Colors.lightGreenAccent,
+                    activeColor: Colors.green,
+                ),
+                  ],
+                  ),
+                ),
               ],
             ),
        )
