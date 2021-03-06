@@ -8,6 +8,7 @@ import 'models.dart';
 typedef void Callback(List<dynamic> list, int h, int w);
 
 class Input extends StatefulWidget {
+  
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
   final Function posenetOver;
