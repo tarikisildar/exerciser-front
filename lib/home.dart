@@ -7,6 +7,8 @@ import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
+import 'package:speech_recognition/speech_recognition.dart';
+
 
 import 'draw.dart';
 
@@ -32,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   dynamic curExerciseFull;
   String _model = posenet;
   SavePoints savePoints;
+  bool isDebug = false;
 
   bool closeTopContainer = true;
   double topContainer = 0;
@@ -60,9 +63,6 @@ class _HomePageState extends State<HomePage> {
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-
-
-
     print(res);
   }
   setSavePoints(SavePoints svPoints){
@@ -84,6 +84,14 @@ class _HomePageState extends State<HomePage> {
     });
     
   }
+  bool checkRecording()
+  {
+    return savePoints.isRecording;
+  }
+
+  posenetOver(){
+    savePoints.onRecord(context);
+  }
 
   Future<http.Response> getDistanceOfCurrent(List<List<Point>> resultsList)
   {
@@ -92,10 +100,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<http.Response> getDistance(String jsonName,List<List<Point>> resultsList)
   {
+
+
     var name = _currentExcersise.substring(0, _currentExcersise.length - 5);
     var repeat = curExerciseFull["repeat"];
     print(repeat);
-    return http.post("http://157.230.108.121:8080/similarity-all/?repeat=$repeat",
+    return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -265,7 +275,9 @@ class _HomePageState extends State<HomePage> {
                 Input(
                   widget.cameras,
                   _model,
+                  checkRecording,
                   setRecognitions,
+                  posenetOver
                 ),
                 savePoints,
                 BndBox(
@@ -276,6 +288,25 @@ class _HomePageState extends State<HomePage> {
                     size.width,
                     _model,
                     savePoints),
+                Container(
+                  alignment: Alignment(0.0, 0.9),
+                  child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Switch(
+                    value: isDebug,
+                    onChanged: (value){
+                      setState(() {
+                        isDebug=value;
+                      });
+                    },
+                    activeTrackColor: Colors.lightGreenAccent,
+                    activeColor: Colors.green,
+                ),
+                  ],
+                  ),
+                ),
               ],
             ),
        )
