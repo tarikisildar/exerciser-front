@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_realtime_detection/login.dart';
 import 'home.dart';
 
 
@@ -8,11 +9,7 @@ List<CameraDescription> cameras;
 
 Future<Null> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    cameras = await availableCameras();
-  } on CameraException catch (e) {
-    print('Error: $e.code\nError Message: $e.message');
-  }
+  
   runApp(new MyApp());
 }
 
@@ -22,9 +19,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'tflite real-time detection',
       theme: ThemeData(
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
       ),
-      home: HomePage(cameras),
+      home: LoginScreen(),
     );
   }
 }
