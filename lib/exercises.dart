@@ -13,13 +13,11 @@ import 'package:tflite/tflite.dart';
 class ExercisesPage extends StatefulWidget
 
 {
-  final List<CameraDescription> cameras;
 
-  ExercisesPage(this.cameras);
+  ExercisesPage();
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
-
 }
 
 class ExersisesState extends State<ExercisesPage>
@@ -119,7 +117,7 @@ class ExersisesState extends State<ExercisesPage>
     currentExcersise = excersise["points"];
     curExerciseFull = excersise;
     loadModel();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,widget.cameras,model)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,model)));
     
   }
 
@@ -171,9 +169,7 @@ class ExersisesState extends State<ExercisesPage>
                         return GestureDetector(
                           onTap : () {  
                             setState(() {
-                      
                               onSelect(exercisesDataRaw[index]);
-                              
                             });
                             },
                             child: Opacity(

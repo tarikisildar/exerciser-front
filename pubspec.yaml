@@ -22,6 +22,9 @@ dependencies:
   cupertino_icons: ^0.1.2
   http: ^0.12.2
   speech_recognition: "^0.3.0"
+  charts_flutter: ^0.6.0
+  date_format: ^1.0.9
+  flutter_login: ^1.0.14
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +52,7 @@ flutter:
   assets:
    - assets/posenet_mv1_075_float_from_checkpoints.tflite
    - assets/exercises/
-
+   - assets/
    - assets/exerciseImages/
    - assets/exerciseVideos/
    # An image asset can refer to one or more resolution-specific "variants", see

@@ -3,13 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
+import 'package:flutter_realtime_detection/history.dart';
 
 
 class HomePage extends StatefulWidget 
 {
-  final List<CameraDescription> cameras;
 
-  HomePage(this.cameras);
+  HomePage();
 
   @override
   _HomePageState createState() => new _HomePageState();
@@ -118,8 +118,9 @@ class _HomePageState extends State<HomePage>
                       icon: Icon(Icons.history_outlined, color: Colors.black),
                       onPressed: () {
                         setState(() {
-                          currentPageName = "My Workouts";
+                          currentPageName = "My Workout History";
                           isSideBarActive = false;
+                          currentPage = UserHistoryPage();
                         });
                         
                       }
@@ -132,7 +133,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "Explore";
                           isSideBarActive = false;
-                          currentPage = ExercisesPage(widget.cameras);
+                          currentPage = ExercisesPage();
                         });
                         
                       }

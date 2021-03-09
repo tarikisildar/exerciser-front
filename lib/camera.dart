@@ -9,7 +9,6 @@ typedef void Callback(List<dynamic> list, int h, int w);
 
 class Input extends StatefulWidget {
   
-  final List<CameraDescription> cameras;
   final Callback setRecognitions;
   final Function posenetOver;
   final Function checkRecord;
@@ -17,7 +16,7 @@ class Input extends StatefulWidget {
   bool isRecording = false;
 
   
-  Input(this.cameras, this.model, this.checkRecord,this.setRecognitions,this.posenetOver);
+  Input( this.model, this.checkRecord,this.setRecognitions,this.posenetOver);
 
   @override
   _CameraState createState() => new _CameraState();
@@ -26,18 +25,20 @@ class Input extends StatefulWidget {
 class _CameraState extends State<Input> {
   CameraController controller;
   bool isDetecting = false;
-
+  List<CameraDescription> cameras;
   List<CameraImage> frames = new List<CameraImage>();
 
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.cameras == null || widget.cameras.length < 1) {
+  void setCamera() async{
+    try {
+    cameras = await availableCameras();
+    } on CameraException catch (e) {
+    print('Error: $e.code\nError Message: $e.message');
+     }
+     if (cameras == null || cameras.length < 1) {
       print('No camera is found');
     } else {
       controller = new CameraController(
-        widget.cameras[0],
+        cameras[0],
         ResolutionPreset.high
       );
       controller.initialize().then((_) {
@@ -87,6 +88,14 @@ class _CameraState extends State<Input> {
         });
       });
     }
+
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    setCamera();
+    
   }
 
   void record(bool isRec)

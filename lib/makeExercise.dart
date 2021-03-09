@@ -18,10 +18,9 @@ class CameraPage extends StatefulWidget
 {
   final dynamic currentExercise;
 
-  final List<CameraDescription> cameras;
   final String model;
 
-  CameraPage(this.currentExercise,this.cameras,this.model);
+  CameraPage(this.currentExercise,this.model);
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -113,7 +112,6 @@ class _CameraPageState extends State<CameraPage>
           Stack(
               children: [
                 Input(
-                  widget.cameras,
                   widget.model,
                   checkRecording,
                   setRecognitions,
