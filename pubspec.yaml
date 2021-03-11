@@ -25,6 +25,8 @@ dependencies:
   charts_flutter: ^0.6.0
   date_format: ^1.0.9
   flutter_login: ^1.0.14
+  animations: ^1.0.0+5
+  better_player: ^0.0.6
 
 dev_dependencies:
   flutter_test:
@@ -50,7 +52,7 @@ flutter:
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
   assets:
-   - assets/posenet_mv1_075_float_from_checkpoints.tflite
+   #- assets/posenet_mv1_075_float_from_checkpoints.tflite
    - assets/exercises/
    - assets/
    - assets/exerciseImages/

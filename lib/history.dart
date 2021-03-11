@@ -66,6 +66,7 @@ class UserHistoryState extends State<UserHistoryPage>{
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
+                
               ],
             ),
           ))); 
@@ -111,6 +112,10 @@ class UserHistoryState extends State<UserHistoryPage>{
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 post["isCorrect"] ? Icon ( Icons.check, color: Colors.green) : Icon(Icons.cancel, color: Colors.red),
+                Image.asset(
+                  "assets/logo.png",
+                  height: 100,
+                ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -132,10 +137,7 @@ class UserHistoryState extends State<UserHistoryPage>{
 
                   ],
                 ),
-                /*Image.asset(
-                  "assets/exerciseImages/${post["image"]}",
-                  height: double.infinity,
-                )*/
+                
               ],
             ),
           )));

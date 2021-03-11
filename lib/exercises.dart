@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_realtime_detection/enums/cardType.dart';
 import 'package:flutter_realtime_detection/makeExercise.dart';
 import 'package:flutter_realtime_detection/models.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
@@ -7,6 +8,10 @@ import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
 import 'package:tflite/tflite.dart';
+
+import 'exerciseCards.dart';
+import 'package:animations/animations.dart';
+
 
 
 
@@ -60,7 +65,8 @@ class ExersisesState extends State<ExercisesPage>
 
     List<Widget> listItems = [];
     responseList.forEach((post) {
-      listItems.add(Container(
+      listItems.add(
+        Container(
           height: 150,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
@@ -71,30 +77,43 @@ class ExersisesState extends State<ExercisesPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      post["name"],
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    Text(
-                      post["difficulty"],
-                      style: const TextStyle(fontSize: 17, color: Colors.grey),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      "${post["repeat"]} Repeat",
-                      style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
-                    )
-                  ],
+                Expanded(
+                  child:
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[    
+                      SizedBox(
+                        height: 10,
+                      ),
+                        Text(
+                            post["name"],
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+
+                      Text(
+                        post["difficulty"],
+                        style: const TextStyle(fontSize: 17, color: Colors.grey),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        "${post["repeat"]} Repeat",
+                        style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
+                      )
+                    ],
+                  ),
                 ),
                 /*Image.asset(
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
+                Image.asset(
+                  "assets/logo.png",
+                  height: double.infinity,
+                )
               ],
             ),
           )));
@@ -113,11 +132,13 @@ class ExersisesState extends State<ExercisesPage>
     print(res);
   }
 
-  onSelect(excersise) {
+  onSelect(excersise,index) {
     currentExcersise = excersise["points"];
     curExerciseFull = excersise;
-    loadModel();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,model)));
+    
+
+    //loadModel();
+    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,model)));
     
   }
 
@@ -166,10 +187,13 @@ class ExersisesState extends State<ExercisesPage>
                       physics: BouncingScrollPhysics(),
                       itemBuilder: (context, index) {
                         double scale = 1.0;
-                        return GestureDetector(
+                        return OpenContainer(
+                          closedBuilder: (_, openContainer){
+                          return GestureDetector(
                           onTap : () {  
                             setState(() {
-                              onSelect(exercisesDataRaw[index]);
+                              openContainer();
+                              onSelect(exercisesDataRaw[index], index);
                             });
                             },
                             child: Opacity(
@@ -185,6 +209,13 @@ class ExersisesState extends State<ExercisesPage>
                                     child: exercisesData[index]),
                                 ),
                               ),
+                        );
+                        
+                        },
+                          openBuilder: (_, closeContainer)
+                          {
+                              return ExerciseCard(CardType.exercise,curExerciseFull,closeContainer);
+                          },
                         );
                       })),
             ],
