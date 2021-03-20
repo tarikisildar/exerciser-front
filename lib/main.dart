@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_realtime_detection/exercises.dart';
 import 'package:flutter_realtime_detection/login.dart';
 import 'home.dart';
 
@@ -21,7 +22,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.light,
       ),
-      home: LoginScreen(),
+      home: HomePage()
+      //home: LoginScreen(),
     );
   }
 }

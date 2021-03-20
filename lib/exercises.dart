@@ -55,6 +55,7 @@ class ExersisesState extends State<ExercisesPage>
   {
     var response = await getExercises();
     List<dynamic> responseList = new List();
+    
     exercisesDataRaw = jsonDecode(response.body) as List;
     exercisesDataRaw.forEach((element) {
       responseList.add(element);
@@ -81,6 +82,7 @@ class ExersisesState extends State<ExercisesPage>
                   child:
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[    
                       SizedBox(
                         height: 10,
@@ -96,13 +98,6 @@ class ExersisesState extends State<ExercisesPage>
                         post["difficulty"],
                         style: const TextStyle(fontSize: 17, color: Colors.grey),
                       ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        "${post["repeat"]} Repeat",
-                        style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
-                      )
                     ],
                   ),
                 ),

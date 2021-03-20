@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
 import 'package:flutter_realtime_detection/history.dart';
+import 'package:flutter_realtime_detection/workoutPlan.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 
 class HomePage extends StatefulWidget 
@@ -21,7 +23,7 @@ class _HomePageState extends State<HomePage>
   double screenHeight;
   double screenWidth;
   String currentPageName = "My Workout Plan";
-  Widget currentPage;
+  Widget currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
 
 
   final Duration duration = const Duration(milliseconds: 100);
@@ -47,8 +49,8 @@ class _HomePageState extends State<HomePage>
       duration: duration,
       top: 0,
       bottom: 0,
-      left: isSideBarActive ? 0.2 * screenWidth : 0,
-      right: isSideBarActive ? -0.8 *screenWidth : 0,
+      left: isSideBarActive ? 0.15 * screenWidth : 0,
+      right: isSideBarActive ? -0.15 *screenWidth : 0,
       child: SafeArea(
         child : 
           Scaffold(
@@ -110,6 +112,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "My Workout Plan";
                           isSideBarActive = false;
+                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
                         });
                       }
                     ),
