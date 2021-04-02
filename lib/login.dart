@@ -1,34 +1,65 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
+import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
-const users = const {
-  '1@gmail.com': '12345',
-  'hunter@gmail.com': 'hunter',
-};
+
 
 class LoginScreen extends StatelessWidget {
   Duration get loginTime => Duration(milliseconds: 2250);
 
-  Future<String> _authUser(LoginData data) {
-    print('Name: ${data.name}, Password: ${data.password}');
-    return Future.delayed(loginTime).then((_) {
-      if (!users.containsKey(data.name)) {
-        return 'Username not exists';
-      }
-      if (users[data.name] != data.password) {
-        return 'Password does not match';
-      }
-      return null;
-    });
+  Future<String> _authUser(LoginData data) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var response = await http.post(Constants.webPath + "/users/login"
+                ,headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: jsonEncode(data.toJson()));
+
+
+    try
+    {
+      prefs.setString("token", "Bearer " + jsonDecode(response.body)["access_token"]);
+    }
+    catch(e)
+    {
+      return "Bad Login";
+    }
+
+    var user = await http.get(Constants.webPath + "/users"
+                ,headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization' : prefs.getString("token")
+            });
+            
+    prefs.setString("userId",jsonDecode(user.body)["logged_in_as"]["_id"]);
   }
+
+   Future<String> _register(LoginData data) async
+   {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+    var response = await http.post(Constants.webPath + "/users/register"
+                ,headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: jsonEncode(data.toJson()));
+    print(response.body);
+    _authUser(data);
+
+   }
 
   Future<String> _recoverPassword(String name) {
     print('Name: $name');
-    return Future.delayed(loginTime).then((_) {
-      if (!users.containsKey(name)) {
-        return 'Username not exists';
-      }
+    return Future.delayed(loginTime).then((_) 
+    {
       return null;
     });
   }
@@ -64,7 +95,7 @@ class LoginScreen extends StatelessWidget {
       ),
       
       onLogin: _authUser,
-      onSignup: _authUser,
+      onSignup: _register,
       onSubmitAnimationCompleted: () {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (context) => HomePage(),

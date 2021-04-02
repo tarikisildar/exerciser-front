@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.light,
       ),
-      home: HomePage()
+      home: LoginScreen()
       //home: LoginScreen(),
     );
   }
