@@ -3,13 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
+import 'package:flutter_realtime_detection/history.dart';
+import 'package:flutter_realtime_detection/historyPage.dart';
+import 'package:flutter_realtime_detection/workoutPlan.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 
 class HomePage extends StatefulWidget 
 {
-  final List<CameraDescription> cameras;
 
-  HomePage(this.cameras);
+  HomePage();
 
   @override
   _HomePageState createState() => new _HomePageState();
@@ -21,7 +24,7 @@ class _HomePageState extends State<HomePage>
   double screenHeight;
   double screenWidth;
   String currentPageName = "My Workout Plan";
-  Widget currentPage;
+  Widget currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
 
 
   final Duration duration = const Duration(milliseconds: 100);
@@ -47,8 +50,8 @@ class _HomePageState extends State<HomePage>
       duration: duration,
       top: 0,
       bottom: 0,
-      left: isSideBarActive ? 0.2 * screenWidth : 0,
-      right: isSideBarActive ? -0.8 *screenWidth : 0,
+      left: isSideBarActive ? 0.15 * screenWidth : 0,
+      right: isSideBarActive ? -0.15 *screenWidth : 0,
       child: SafeArea(
         child : 
           Scaffold(
@@ -110,6 +113,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "My Workout Plan";
                           isSideBarActive = false;
+                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
                         });
                       }
                     ),
@@ -118,8 +122,9 @@ class _HomePageState extends State<HomePage>
                       icon: Icon(Icons.history_outlined, color: Colors.black),
                       onPressed: () {
                         setState(() {
-                          currentPageName = "My Workouts";
+                          currentPageName = "My Workout History";
                           isSideBarActive = false;
+                          currentPage = HistoryPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
                         });
                         
                       }
@@ -132,7 +137,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "Explore";
                           isSideBarActive = false;
-                          currentPage = ExercisesPage(widget.cameras);
+                          currentPage = ExercisesPage();
                         });
                         
                       }

@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_realtime_detection/constants.dart';
+import 'package:flutter_realtime_detection/enums/cardType.dart';
+import 'package:flutter_realtime_detection/exerciseModel.dart';
 import 'package:flutter_realtime_detection/makeExercise.dart';
 import 'package:flutter_realtime_detection/models.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
@@ -6,20 +9,23 @@ import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite/tflite.dart';
+
+import 'exerciseCards.dart';
+import 'package:animations/animations.dart';
+
 
 
 
 class ExercisesPage extends StatefulWidget
 
 {
-  final List<CameraDescription> cameras;
 
-  ExercisesPage(this.cameras);
+  ExercisesPage();
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
-
 }
 
 class ExersisesState extends State<ExercisesPage>
@@ -27,7 +33,8 @@ class ExersisesState extends State<ExercisesPage>
 
   List<Widget> exercisesData = [];
   List<dynamic> exercisesDataRaw;
-  dynamic curExerciseFull;
+  List<Exercise> exercises = [];
+  Exercise curExercise;
 
   ScrollController controller = ScrollController();
   double topContainer = 0;
@@ -43,26 +50,37 @@ class ExersisesState extends State<ExercisesPage>
   bool closeTopContainer = true;
 
 
-  Future<http.Response> getExercises()
+  Future<http.Response> getExercises() async
   {
-    return http.get("http://157.230.108.121:8080/exercises");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return http.get(Constants.webPath + "exercises",
+    headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+              'authorization' : prefs.getString("token")
+            });
   }
 
   void getExerciseData() async
   {
     var response = await getExercises();
-    List<dynamic> responseList = new List();
-    exercisesDataRaw = jsonDecode(response.body) as List;
+    
+    exercisesDataRaw = jsonDecode(response.body)["data"] as List;
+    //print(exercisesDataRaw[0]);
     exercisesDataRaw.forEach((element) {
-      responseList.add(element);
+      var exer  = Exercise.fromJson(element);
+      //print(exer.name);
+      //var exerciseDetails = ExerciseDetails(exer,element["repeat"],element["setCount"]);
+      exercises.add(exer);
      });
 
 
     //List<Map<String,String>> responseList = parsed.map<Map<String,String>>((json) => HashMap<String,String>.fromJson(json)).toList();
 
     List<Widget> listItems = [];
-    responseList.forEach((post) {
-      listItems.add(Container(
+    exercises.forEach((post) {
+      listItems.add(
+        Container(
           height: 150,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
@@ -73,30 +91,37 @@ class ExersisesState extends State<ExercisesPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      post["name"],
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    Text(
-                      post["difficulty"],
-                      style: const TextStyle(fontSize: 17, color: Colors.grey),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      "${post["repeat"]} Repeat",
-                      style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
-                    )
-                  ],
+                Expanded(
+                  child:
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[    
+                      SizedBox(
+                        height: 10,
+                      ),
+                        Text(
+                            post.name,
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+
+                      Text(
+                        post.difficulty,
+                        style: const TextStyle(fontSize: 17, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
                 /*Image.asset(
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
+                Image.asset(
+                  "assets/logo.png",
+                  height: double.infinity,
+                )
               ],
             ),
           )));
@@ -115,11 +140,13 @@ class ExersisesState extends State<ExercisesPage>
     print(res);
   }
 
-  onSelect(excersise) {
-    currentExcersise = excersise["points"];
-    curExerciseFull = excersise;
-    loadModel();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,widget.cameras,model)));
+  onSelect(excersise,index) {
+    //currentExcersise = excersise;
+    curExercise = excersise;
+    
+
+    //loadModel();
+    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,model)));
     
   }
 
@@ -168,12 +195,13 @@ class ExersisesState extends State<ExercisesPage>
                       physics: BouncingScrollPhysics(),
                       itemBuilder: (context, index) {
                         double scale = 1.0;
-                        return GestureDetector(
+                        return OpenContainer(
+                          closedBuilder: (_, openContainer){
+                          return GestureDetector(
                           onTap : () {  
                             setState(() {
-                      
-                              onSelect(exercisesDataRaw[index]);
-                              
+                              openContainer();
+                              onSelect(exercises[index], index);
                             });
                             },
                             child: Opacity(
@@ -189,6 +217,13 @@ class ExersisesState extends State<ExercisesPage>
                                     child: exercisesData[index]),
                                 ),
                               ),
+                        );
+                        
+                        },
+                          openBuilder: (_, closeContainer)
+                          {
+                              return ExerciseCard(CardType.exercise,curExercise,closeContainer);
+                          },
                         );
                       })),
             ],
