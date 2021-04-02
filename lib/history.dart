@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
 
-class UserHistoryPage extends StatefulWidget
+class UserHistoryPage extends StatefulWidget //deprecated
 {
   @override
   State<StatefulWidget> createState() => new UserHistoryState();
@@ -124,7 +124,7 @@ class UserHistoryState extends State<UserHistoryPage>{
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                     Text(
-                      formatDate(post["date"],[d, '-', M, '-', yyyy, '  ', HH, ':', nn]),
+                      formatDate(post["date"],[d, '-', M, '-', yyyy, ' ', HH, ':', nn]),
                       style: const TextStyle(fontSize: 17, color: Colors.grey),
                     ),
                     SizedBox(
