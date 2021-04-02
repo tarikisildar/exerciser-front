@@ -1,17 +1,25 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:better_player/better_player.dart';
+import 'package:date_format/date_format.dart';
 import 'package:day_selector/day_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
+import 'package:flutter_realtime_detection/exerciseModel.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:weekday_selector/weekday_selector.dart';
+import 'package:http/http.dart' as http;
+
+import 'constants.dart';
+
 
 class ExerciseCard extends StatefulWidget{
   final CardType cardType;
-  final dynamic exercise;
+  final Exercise exercise;
   final VoidCallback closeContainer;
 
   ExerciseCard(this.cardType,this.exercise,this.closeContainer);
@@ -35,14 +43,16 @@ class ExerciseCardState extends State<ExerciseCard>
   List<Widget> calendarStates = [];
 
   List<bool> values = List.filled(7, false);
+  
 
   @override
     void initState(){
       super.initState();
       configureVideo();
       calendarStates.add(setStartingDateState());
-      repeatCount = int.parse(widget.exercise["repeat"]);
+      repeatCount = 5;
       setCount = 1;
+      selectedStartingDay = DateTime.now();
     }
 
     void configureVideo()
@@ -97,11 +107,11 @@ class ExerciseCardState extends State<ExerciseCard>
                     ),
 
                     Text(
-                      widget.exercise["name"],
+                      widget.exercise.name,
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                     Text(
-                      widget.exercise["difficulty"],
+                      widget.exercise.difficulty,
                       style: const TextStyle(fontSize: 17, color: Colors.grey),
                     ),
                     SizedBox(
@@ -361,6 +371,8 @@ class ExerciseCardState extends State<ExerciseCard>
                               calendarStates.add(setDays());
                               break;
                             case 3:
+                              addToThePlan();
+                              
                               widget.closeContainer();
                               break;
                           }
@@ -383,6 +395,40 @@ class ExerciseCardState extends State<ExerciseCard>
         )
       );  
   }
+  void addToThePlan()
+  async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    //Exercise exerciseModel = Exercise(widget.exercise.exercise.id,widget.exercise.exercise.name,widget.exercise.exercise.difficulty,widget.exercise.exercise.);
+    ExerciseDetails exerciseDetails = ExerciseDetails(widget.exercise,repeatCount,setCount);
+
+    List<Map<String,dynamic>> days = [];
+    for(int i = 0; i < values.length; i++){
+      if(values[i]){
+        var map = {"id" : i};
+        days.add(map);
+      }
+    }
+
+    UserExercise userExercise = UserExercise(selectedStartingDay,selectedDay,prefs.getString("userId"),prefs.getString("userId"),exerciseDetails,days);
+    print(userExercise.recurrentDays);
+    var headers = {
+              'Content-type': 'application/json; charset=UTF-8',
+              'Accept': 'application/json',
+              'authorization' : prefs.getString("token")
+            };
+    var request = http.post(Constants.webPath + "users/" + prefs.getString("userId")+ "/exercises/",
+    headers: headers,
+    body: jsonEncode(userExercise.toJson()));
+
+    print(jsonEncode(userExercise.toJson()));
+    print((await request).body);
+  }
+
+
+
+
+
   Widget setStartingDateState()
   {
     return Column(
@@ -445,6 +491,7 @@ class ExerciseCardState extends State<ExerciseCard>
   void selectStartingDay(DateTime day)
   {
     selectedStartingDay = day;
+    selectedDay = selectedStartingDay;
   }
 
   

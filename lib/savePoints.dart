@@ -49,88 +49,15 @@ class Language {
 class SavePoints extends StatefulWidget
 {
   
-  final Function exitFunction;
-  final Future<http.Response> Function(List<List<Point>>) finishExercise;
-  SavePoints({this.exitFunction,this.finishExercise});
+ 
+  
+  SavePoints();
 
   List<List<Point>> resultsList = [];
   bool isRecording = false;
   int recordCounter = 0;
 
-  
-  
 
-  void addResults(List<Point> frameResults)
-  {
-
-    resultsList.add(frameResults);
-  }
-
-  
-
-  void onRecord(BuildContext context) async
-  {
-    print(isRecording);
-    if(!isRecording)
-    {
-      recordCounter++;
-      String score = "";
-      http.Response response = await finishExercise(resultsList);
-      if(response.statusCode != 200){
-        showDialog(context: context,
-                  builder: (BuildContext context){
-                  return CustomDialogBox(
-                    title: "Oops!",
-                    descriptions: "We couldn't see you there? Maybe you hit the finish by mistake?",
-                    text1: "Try again",
-                    text2: "Main Menu",
-                    exitFunction: exitFunction,
-                  );
-                  }
-                );
-            
-      }
-      else
-      {
-        print(response.body);
-        var matches = jsonDecode(response.body)["match"];
-
-        bool isCorrect = false;
-        int count = 0;
-        int repeat = 0;
-
-        for(var match in matches)
-        {
-          isCorrect = match["isCorrect"];
-          count = match["count"];
-          repeat = match["repeat"];
-        }
-
-        //score = jsonDecode(response.body)["match"][0]["distance"];
-        //var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
-        //String scoreSt = scoreLis.toString();
-
-        String title;
-        if(isCorrect) title = "Congratulations"; else title = "You Failed";
-        
-
-        showDialog(context: context,
-                    builder: (BuildContext context){
-                    return CustomDialogBox(
-                      title: title,
-                      descriptions: "You have made $count repeats",
-                      text1: "Try again",
-                      text2: "Ok",
-                      exitFunction: exitFunction,
-                    );
-                    }
-                  );
-      }
-      _writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
-      _writeToFile(response.body, recordCounter.toString()+ ".txt");
-      resultsList.clear();
-    }
-  }
 
 
 
@@ -223,14 +150,7 @@ class RecordState extends State<SavePoints>
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
-                    RaisedButton(
-                      elevation: 5.0,
-                      padding: EdgeInsets.all(15.0),
-                      color: widget.isRecording ? Colors.red : Colors.blue,
-                      child: Text(widget.isRecording ? "Finish" : "Start"),
-                      
-                      onPressed:() => setState(() { widget.isRecording = !widget.isRecording;})
-                    ),
+                    
                     
                   ],
                 ),

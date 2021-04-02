@@ -11,16 +11,18 @@ import 'bndbox.dart';
 import 'camera.dart';
 import 'dart:math' as math;
 
+import 'customDialogBox.dart';
+import 'exerciseModel.dart';
+
 
 
 
 class CameraPage extends StatefulWidget
 {
-  final dynamic currentExercise;
+  final List<UserExercise> exercises;
 
-  final String model;
 
-  CameraPage(this.currentExercise,this.model);
+  CameraPage(this.exercises);
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -29,14 +31,18 @@ class CameraPage extends StatefulWidget
 
 class _CameraPageState extends State<CameraPage>
 {
-  SavePoints savePoints;
+  //SavePoints savePoints;
   List<dynamic> _recognitions;
   bool isDebug = false;
 
-
+  List<List<Point>> resultsList = [];
+  bool isRecording = false;
+  int recordCounter = 0;
 
   int _imageHeight = 0;
   int _imageWidth = 0;
+  int exerciseIx = 0;
+  int currentSet = 0;
 
   setRecognitions(recognitions, imageHeight, imageWidth) {
     setState(() {
@@ -48,27 +54,39 @@ class _CameraPageState extends State<CameraPage>
 
   bool checkRecording()
   {
-    return savePoints.isRecording;
+    return isRecording;
   }
 
   posenetOver(){
-    savePoints.onRecord(context);
+    onRecord(context);
   }
 
   setSavePoints(SavePoints svPoints){
-    savePoints = svPoints;
+    //savePoints = svPoints;
   }
   
   
-  exitToMenu() => Navigator.pop(context);
-
-  Future<http.Response> getDistance(String jsonName,List<List<Point>> resultsList)
+  exitToMenu() => 
   {
+      Navigator.pop(context)
+  };
 
+  nextExercise() =>{
+    exerciseIx++,
+    exitToMenu()
+  };
 
-    var name = widget.currentExercise["points"].substring(0, widget.currentExercise["points"].length - 5);
-    var repeat = widget.currentExercise["repeat"];
-    print(repeat);
+  nextSet() =>{
+    currentSet++
+  };
+
+  Future<http.Response> getDistance(List<List<Point>> resultsList)
+  {
+    UserExercise curEx = widget.exercises[exerciseIx];
+
+    var name = curEx.exerciseDetails.exercise.name;
+    var repeat = curEx.exerciseDetails.repeat;
+
     return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -80,14 +98,90 @@ class _CameraPageState extends State<CameraPage>
 
   Future<http.Response> getDistanceOfCurrent(List<List<Point>> resultsList)
   {
-      return getDistance(widget.currentExercise["points"], resultsList);
+      return getDistance(resultsList);
   }
   @override
   void initState() 
   {
-    setSavePoints(SavePoints(exitFunction: exitToMenu,finishExercise: getDistanceOfCurrent));
+    //setSavePoints(SavePoints());
     super.initState();
   }
+
+    
+  
+
+  void addResults(List<Point> frameResults)
+  {
+
+    resultsList.add(frameResults);
+  }
+
+  
+
+  void onRecord(BuildContext context) async
+  {
+    print(isRecording);
+    if(!isRecording)
+    {
+      recordCounter++;
+      http.Response response = await getDistanceOfCurrent(resultsList);
+      if(response.statusCode != 200){
+        showDialog(context: context,
+                  builder: (BuildContext context){
+                  return CustomDialogBox(
+                    title: "Oops!",
+                    descriptions: "We couldn't see you there? Maybe you hit the finish by mistake?",
+                    text1: "Try again",
+                    text2: "Main Menu",
+                    exitFunction: exitToMenu
+                    
+                  );
+                  }
+                );
+            
+      }
+      else
+      {
+        print(response.body);
+        var matches = jsonDecode(response.body)["match"];
+
+        bool isCorrect = false;
+        int count = 0;
+        int repeat = 0;
+
+        for(var match in matches)
+        {
+          isCorrect = match["isCorrect"];
+          count = match["count"];
+          repeat = match["repeat"];
+        }
+
+        //score = jsonDecode(response.body)["match"][0]["distance"];
+        //var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
+        //String scoreSt = scoreLis.toString();
+
+        String title;
+        if(isCorrect) title = "Congratulations"; else title = "You Failed";
+        
+
+        showDialog(context: context,
+                    builder: (BuildContext context){
+                    return CustomDialogBox(
+                      title: title,
+                      descriptions: "You have made $count repeats",
+                      text1: "Try again",
+                      text2: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? "Finish Move" : "Next Set",
+                      exitFunction: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? nextExercise : nextSet,
+                    );
+                    }
+                  );
+      }
+      //_writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
+      //_writeToFile(response.body, recordCounter.toString()+ ".txt");
+      resultsList.clear();
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -112,36 +206,36 @@ class _CameraPageState extends State<CameraPage>
           Stack(
               children: [
                 Input(
-                  widget.model,
                   checkRecording,
                   setRecognitions,
                   posenetOver
                 ),
-                savePoints,
+                //savePoints,
                 BndBox(
                     _recognitions == null ? [] : _recognitions,
                     math.max(_imageHeight, _imageWidth),
                     math.min(_imageHeight, _imageWidth),
                     size.height,
                     size.width,
-                    widget.model,
-                    savePoints),
+                    addResults),
                 Container(
                   alignment: Alignment(0.0, 0.9),
                   child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
-                    Switch(
-                    value: isDebug,
-                    onChanged: (value){
-                      setState(() {
-                        isDebug=value;
-                      });
-                    },
-                    activeTrackColor: Colors.lightGreenAccent,
-                    activeColor: Colors.green,
-                ),
+                    RaisedButton(
+                      elevation: 5.0,
+                      padding: EdgeInsets.all(15.0),
+                      color: isRecording ? Colors.red : Colors.blue,
+                      shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(color: Colors.black)
+                          ),
+                      child: Text(isRecording ? "Finish" : "Start", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+                      
+                      onPressed:() => setState(() { isRecording = !isRecording;})
+                    ),
                   ],
                   ),
                 ),

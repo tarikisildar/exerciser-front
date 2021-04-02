@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
+import 'package:flutter_realtime_detection/exerciseModel.dart';
 import 'package:flutter_realtime_detection/makeExercise.dart';
 import 'package:flutter_realtime_detection/models.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
@@ -7,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite/tflite.dart';
 
 import 'exerciseCards.dart';
@@ -30,7 +33,8 @@ class ExersisesState extends State<ExercisesPage>
 
   List<Widget> exercisesData = [];
   List<dynamic> exercisesDataRaw;
-  dynamic curExerciseFull;
+  List<Exercise> exercises = [];
+  Exercise curExercise;
 
   ScrollController controller = ScrollController();
   double topContainer = 0;
@@ -46,26 +50,35 @@ class ExersisesState extends State<ExercisesPage>
   bool closeTopContainer = true;
 
 
-  Future<http.Response> getExercises()
+  Future<http.Response> getExercises() async
   {
-    return http.get("http://157.230.108.121:8080/exercises");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return http.get(Constants.webPath + "exercises",
+    headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+              'authorization' : prefs.getString("token")
+            });
   }
 
   void getExerciseData() async
   {
     var response = await getExercises();
-    List<dynamic> responseList = new List();
     
-    exercisesDataRaw = jsonDecode(response.body) as List;
+    exercisesDataRaw = jsonDecode(response.body)["data"] as List;
+    //print(exercisesDataRaw[0]);
     exercisesDataRaw.forEach((element) {
-      responseList.add(element);
+      var exer  = Exercise.fromJson(element);
+      //print(exer.name);
+      //var exerciseDetails = ExerciseDetails(exer,element["repeat"],element["setCount"]);
+      exercises.add(exer);
      });
 
 
     //List<Map<String,String>> responseList = parsed.map<Map<String,String>>((json) => HashMap<String,String>.fromJson(json)).toList();
 
     List<Widget> listItems = [];
-    responseList.forEach((post) {
+    exercises.forEach((post) {
       listItems.add(
         Container(
           height: 150,
@@ -88,14 +101,14 @@ class ExersisesState extends State<ExercisesPage>
                         height: 10,
                       ),
                         Text(
-                            post["name"],
+                            post.name,
                             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
 
                       Text(
-                        post["difficulty"],
+                        post.difficulty,
                         style: const TextStyle(fontSize: 17, color: Colors.grey),
                       ),
                     ],
@@ -128,8 +141,8 @@ class ExersisesState extends State<ExercisesPage>
   }
 
   onSelect(excersise,index) {
-    currentExcersise = excersise["points"];
-    curExerciseFull = excersise;
+    //currentExcersise = excersise;
+    curExercise = excersise;
     
 
     //loadModel();
@@ -188,7 +201,7 @@ class ExersisesState extends State<ExercisesPage>
                           onTap : () {  
                             setState(() {
                               openContainer();
-                              onSelect(exercisesDataRaw[index], index);
+                              onSelect(exercises[index], index);
                             });
                             },
                             child: Opacity(
@@ -209,7 +222,7 @@ class ExersisesState extends State<ExercisesPage>
                         },
                           openBuilder: (_, closeContainer)
                           {
-                              return ExerciseCard(CardType.exercise,curExerciseFull,closeContainer);
+                              return ExerciseCard(CardType.exercise,curExercise,closeContainer);
                           },
                         );
                       })),

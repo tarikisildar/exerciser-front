@@ -1,0 +1,3 @@
+enum ExerciseHistoryType{
+  completed,uncompleted
+}

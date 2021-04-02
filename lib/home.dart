@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
 import 'package:flutter_realtime_detection/history.dart';
+import 'package:flutter_realtime_detection/historyPage.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage>
   double screenHeight;
   double screenWidth;
   String currentPageName = "My Workout Plan";
-  Widget currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
+  Widget currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
 
 
   final Duration duration = const Duration(milliseconds: 100);
@@ -112,7 +113,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "My Workout Plan";
                           isSideBarActive = false;
-                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
+                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
                         });
                       }
                     ),
@@ -123,7 +124,7 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "My Workout History";
                           isSideBarActive = false;
-                          currentPage = UserHistoryPage();
+                          currentPage = HistoryPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
                         });
                         
                       }

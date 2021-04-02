@@ -15,8 +15,7 @@ class BndBox extends StatelessWidget {
   final int previewW;
   final double screenH;
   final double screenW;
-  final String model;
-  final SavePoints savePoints;
+  final Function addResult;
 
   Map pointCoordinates = Map<String, List<double>>();
 
@@ -26,8 +25,7 @@ class BndBox extends StatelessWidget {
    "rightShoulder" : ["rightHip","rightElbow"], "rightElbow": ["rightWrist"], "rightWrist" : [], 
    "rightHip" : ["rightKnee"], "rightKnee" : ["rightAnkle"] };
 
-  BndBox(this.results, this.previewH, this.previewW, this.screenH, this.screenW,
-      this.model,this.savePoints);
+  BndBox(this.results, this.previewH, this.previewW, this.screenH, this.screenW,this.addResult);
 
   T cast<T>(x) => x is T ? x : null;
 
@@ -190,7 +188,7 @@ class BndBox extends StatelessWidget {
         lists..addAll(list);
       });
       lists..addAll(_renderLines());
-      savePoints.addResults(framePoints);
+      addResult(framePoints);
       return lists;
     }
 

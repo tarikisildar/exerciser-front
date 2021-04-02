@@ -12,11 +12,10 @@ class Input extends StatefulWidget {
   final Callback setRecognitions;
   final Function posenetOver;
   final Function checkRecord;
-  final String model;
   bool isRecording = false;
 
   
-  Input( this.model, this.checkRecord,this.setRecognitions,this.posenetOver);
+  Input(  this.checkRecord,this.setRecognitions,this.posenetOver);
 
   @override
   _CameraState createState() => new _CameraState();
