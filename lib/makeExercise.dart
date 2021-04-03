@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/main.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'bndbox.dart';
 import 'camera.dart';
@@ -19,10 +21,11 @@ import 'exerciseModel.dart';
 
 class CameraPage extends StatefulWidget
 {
-  final List<UserExercise> exercises;
+  final UserExercise exercise;
+  final Function nextExercise;
 
 
-  CameraPage(this.exercises);
+  CameraPage(this.exercise,this.nextExercise);
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -41,8 +44,7 @@ class _CameraPageState extends State<CameraPage>
 
   int _imageHeight = 0;
   int _imageWidth = 0;
-  int exerciseIx = 0;
-  int currentSet = 0;
+  int currentSet = 1;
 
   setRecognitions(recognitions, imageHeight, imageWidth) {
     setState(() {
@@ -72,7 +74,7 @@ class _CameraPageState extends State<CameraPage>
   };
 
   nextExercise() =>{
-    exerciseIx++,
+    widget.nextExercise(),
     exitToMenu()
   };
 
@@ -80,16 +82,26 @@ class _CameraPageState extends State<CameraPage>
     currentSet++
   };
 
-  Future<http.Response> getDistance(List<List<Point>> resultsList)
+    void printWrapped(String text) {
+  final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+  pattern.allMatches(text).forEach((match) => print(match.group(0)));
+}
+
+  Future<http.Response> getDistance(List<List<Point>> resultsList) async
   {
-    UserExercise curEx = widget.exercises[exerciseIx];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String userId = prefs.getString("userId");
+    
 
-    var name = curEx.exerciseDetails.exercise.name;
-    var repeat = curEx.exerciseDetails.repeat;
+    UserExercise curEx = widget.exercise;
 
-    return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
+    var exerciseId = curEx.id;
+    printWrapped(jsonEncode(resultsList));
+    print("${Constants.webPath}users/$userId/exercises/$exerciseId");
+    return http.post("${Constants.webPath}users/$userId/exercises/$exerciseId",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
+      'authorization' : prefs.getString("token")
     },
     body: jsonEncode(resultsList)
     );
@@ -116,34 +128,21 @@ class _CameraPageState extends State<CameraPage>
     resultsList.add(frameResults);
   }
 
-  
+
 
   void onRecord(BuildContext context) async
   {
-    print(isRecording);
     if(!isRecording)
     {
       recordCounter++;
       http.Response response = await getDistanceOfCurrent(resultsList);
-      if(response.statusCode != 200){
-        showDialog(context: context,
-                  builder: (BuildContext context){
-                  return CustomDialogBox(
-                    title: "Oops!",
-                    descriptions: "We couldn't see you there? Maybe you hit the finish by mistake?",
-                    text1: "Try again",
-                    text2: "Main Menu",
-                    exitFunction: exitToMenu
-                    
-                  );
-                  }
-                );
-            
-      }
-      else
-      {
-        print(response.body);
-        var matches = jsonDecode(response.body)["match"];
+      try{
+        print("current set:" + currentSet.toString());
+        print("set count:" + widget.exercise.exerciseDetails.setCount.toString());
+        printWrapped(response.body);
+        dynamic matches;
+        
+        matches = jsonDecode(response.body)["data"]["match"];
 
         bool isCorrect = false;
         int count = 0;
@@ -156,9 +155,6 @@ class _CameraPageState extends State<CameraPage>
           repeat = match["repeat"];
         }
 
-        //score = jsonDecode(response.body)["match"][0]["distance"];
-        //var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
-        //String scoreSt = scoreLis.toString();
 
         String title;
         if(isCorrect) title = "Congratulations"; else title = "You Failed";
@@ -170,11 +166,26 @@ class _CameraPageState extends State<CameraPage>
                       title: title,
                       descriptions: "You have made $count repeats",
                       text1: "Try again",
-                      text2: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? "Finish Move" : "Next Set",
-                      exitFunction: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? nextExercise : nextSet,
+                      text2: currentSet == widget.exercise.exerciseDetails.setCount ? "Finish Move" : "Next Set",
+                      exitFunction: currentSet == widget.exercise.exerciseDetails.setCount ? nextExercise : nextSet,
                     );
                     }
                   );
+      }
+      catch(e)
+      {
+        print(e);
+        showDialog(context: context,
+                  builder: (BuildContext context){
+                  return CustomDialogBox(
+                    title: "Oops!",
+                    descriptions: "We couldn't see you there? Maybe you hit the finish by mistake?",
+                    text1: "Try again",
+                    text2: "Main Menu",
+                    exitFunction: exitToMenu
+                  );
+                  }
+                );
       }
       //_writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
       //_writeToFile(response.body, recordCounter.toString()+ ".txt");

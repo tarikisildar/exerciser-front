@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/exerciseModel.dart';
-import 'package:flutter_realtime_detection/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
@@ -46,6 +45,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
 
   UserExercise currentExercise;
   List<UserExercise> userExercises = [];
+  List<UserExercise> userExercisesToday = [];
+  int exerciseToMakeIx = 0;
   DateTime selectedDate = DateTime.now();
 
 
@@ -71,8 +72,22 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         duration: const Duration(milliseconds: 400),
       );
 
+
+      for (int i = 0; i < userExercisesToday.length; i++)
+      {
+        var now =DateTime.now();
+        DateTime todayFirst = new DateTime(now.year, now.month, now.day);
+        DateTime todayLast =  new DateTime(now.year, now.month, now.day,23,59,59);
+        var histories = findHistories(userExercisesToday[i], todayFirst, todayLast);
+        if(histories.isNotEmpty){
+          exerciseToMakeIx++;
+        }
+      }
+
+
       animationController.forward();
       
+
 
   }
 
@@ -107,10 +122,15 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     print(res);
   }
 
+  nextExercise() => {
+    exerciseToMakeIx++
+  };
+
   onSelect() {
 
     loadModel();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercises)));
+    //DateTime.parse(DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercisesToday[exerciseToMakeIx],nextExercise)));
     
   }
 
@@ -121,6 +141,25 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     calendarController.dispose();
     super.dispose();
   }
+
+  List<History> findHistories(UserExercise userExercise, DateTime first, DateTime last)
+    {
+      var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
+      var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
+
+      startingDate = startingDate.subtract(Duration(hours: startingDate.hour));
+      endingDate = endingDate.subtract(Duration(hours: endingDate.hour));
+
+      List<History> recurrentDates = [];
+      for (int i = 0; i <userExercise.history.length; i++){
+        var history = userExercise.history[i];
+        if(history.creationDate.isAfter(startingDate) && history.creationDate.isBefore(endingDate)){
+          recurrentDates.add(history);
+        }
+      }
+      return recurrentDates; 
+
+    }
 
   List<DateTime> findRepetitions(UserExercise userExercise, DateTime first, DateTime last)
     {
@@ -165,6 +204,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     print(getData);
     var exercisesRaw = jsonDecode(getData)["data"] as List;
     userExercises.clear();
+    userExercisesToday.clear();
     for(int i = 0; i < exercisesRaw.length; i++)
     {
       userExercises.add(UserExercise.fromJson(exercisesRaw[i]));
@@ -177,6 +217,12 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
       {
         var curExercise = userExercises[i].exerciseDetails.exercise;
         var exerciseDetails = userExercises[i].exerciseDetails;
+        print("setcount: ${exerciseDetails.setCount}");
+
+        if(isSameDay(DateTime.now(), dates[j])){
+          userExercisesToday.add(userExercises[i]);
+        }
+
         responseList.add(ClientExercise(curExercise.name, curExercise.difficulty, exerciseDetails.repeat, exerciseDetails.setCount, dates[j]));
       }
     }
@@ -184,12 +230,13 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     
 
     List<Widget> listItems = [];
+    int index = 0;
     responseList.forEach((post) {
+      bool disabled = index < exerciseToMakeIx && isSameDay(post.date,DateTime.now());
       listItems.add(
-        
-        exerciseItem(post)
-        
+        exerciseItem(post,disabled)
       );
+      index++;
     });
     setState(() {
       exercisesData = listItems;
@@ -197,11 +244,11 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     addCurrentWindowEvents();
   }
 
-  Widget exerciseItem(ClientExercise post){
+  Widget exerciseItem(ClientExercise post, bool disabled){
     return Container(
           height: 150,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
+          decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: !disabled ? Colors.white : Colors.grey.shade200, boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 10.0),
           ]),
           child: Padding(
@@ -220,10 +267,6 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                       post.name,
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
-                    Text(
-                      formatDate(post.date,[d, '-', M, '-', yyyy, ' ', HH, ':', nn]),
-                      style: const TextStyle(fontSize: 17, color: Colors.grey),
-                    ),
                     SizedBox(
                       height: 10,
                     ),
@@ -231,7 +274,12 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                       "${post.setCount} Sets x ${post.repCount} Repeats",
                       style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
                     ),
-
+                    disabled ? Text(
+                      "Done",
+                      style: const TextStyle(fontSize: 25, color: Colors.lightGreen, fontWeight: FontWeight.bold),
+                    ) : SizedBox(
+                      height: 10,
+                    ),
                   ],
                 ),
                 

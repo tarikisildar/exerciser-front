@@ -43,29 +43,12 @@ class HistoryState extends WorkoutPlanState
     return http.get(url, headers: headers);
   }
 
-  
+  @override
   List<History> findHistories(UserExercise userExercise, DateTime first, DateTime last)
     {
-      var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
-      var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
-
-      startingDate = startingDate.subtract(Duration(hours: startingDate.hour));
-      endingDate = endingDate.subtract(Duration(hours: endingDate.hour));
-
-      print(startingDate.toString());
-      print(endingDate.toString());
-      List<History> recurrentDates = [];
-      for (int i = 0; i <userExercise.history.length; i++){
-        print(i);
-        var history = userExercise.history[i];
-        if(history.creationDate.isAfter(startingDate) && history.creationDate.isBefore(endingDate)){
-          recurrentDates.add(history);
-        }
-      }
-      print(recurrentDates);
-      return recurrentDates; 
-
+      return super.findHistories(userExercise,first,last);
     }
+  
   @override
   void getExerciseData(DateTime first, DateTime last) async
   {
@@ -80,7 +63,7 @@ class HistoryState extends WorkoutPlanState
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
-      var histories = findHistories(userExercises[i], first, last);
+      var histories = super.findHistories(userExercises[i], first, last);
       for(int j = 0; j < histories.length; j++)
       {
         var curExercise = userExercises[i].exerciseDetails.exercise;
@@ -92,7 +75,7 @@ class HistoryState extends WorkoutPlanState
     responseList.forEach((post) {
       listItems.add(
         
-        exerciseItem(post)
+        exerciseItem(post,false)
         
       );
     });
@@ -102,7 +85,12 @@ class HistoryState extends WorkoutPlanState
     addCurrentWindowEvents();
   }
   @override
-  Widget exerciseItem(ClientExercise post)
+  bool canStartTheProgram(){
+    return false;
+  }
+
+  @override
+  Widget exerciseItem(ClientExercise post,bool disabled)
   {
     return Container(
           height: 150,

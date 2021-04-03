@@ -25,7 +25,9 @@ class _CameraState extends State<Input> {
   CameraController controller;
   bool isDetecting = false;
   List<CameraDescription> cameras;
-  List<CameraImage> frames = new List<CameraImage>();
+  //List<CameraImage> frames = new List<CameraImage>();
+  
+  
 
   void setCamera() async{
     try {
@@ -47,12 +49,11 @@ class _CameraState extends State<Input> {
         setState(() {});
 
         controller.startImageStream((CameraImage img) {
-
+            //print(widget.checkRecord().toString() + "vs" + widget.isRecording.toString());
             if(widget.checkRecord() != widget.isRecording)
             {
+              print("checkRecord:" + widget.isRecording.toString());
               record(widget.isRecording);
-              print(widget.isRecording);
-              print(widget.checkRecord());
               widget.isRecording = widget.checkRecord();
               
             }
@@ -60,7 +61,6 @@ class _CameraState extends State<Input> {
             {
               if(!isDetecting)
                 {
-                 //startTime = new DateTime.now().millisecondsSinceEpoch;
                   isDetecting = true;
                   Tflite.runPoseNetOnFrame(
                           bytesList: img.planes.map((plane) {
@@ -73,15 +73,13 @@ class _CameraState extends State<Input> {
                           threshold: 0.7,
                           nmsRadius: 20
                         ).then((recognitions) {
-                          int endTime = new DateTime.now().millisecondsSinceEpoch;
-                          //print("Detection took ${endTime - startTime}");
                           widget.setRecognitions(recognitions, img.height, img.width);
                           isDetecting = false;
                           
                         });
                     
                 }
-              frames.add(img); 
+              //frames.add(img); 
             }
           
         });
@@ -99,13 +97,13 @@ class _CameraState extends State<Input> {
 
   void record(bool isRec)
   async{
-    print(widget.isRecording);
+    //print(widget.isRecording);
     if(isRec)
     {
       
-      await finishRecord();
+      //await finishRecord();
       widget.posenetOver();
-      frames.clear();
+      //frames.clear();
     }
     //widget.isRecording =! widget.isRecording;
     
