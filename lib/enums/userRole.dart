@@ -1,0 +1,3 @@
+enum UserRole{
+  user,doctor
+}

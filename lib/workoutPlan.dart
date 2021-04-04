@@ -21,7 +21,8 @@ class WorkoutPlanPage extends StatefulWidget
   final CalendarFormat calendarFormat;
   final Function selectDay;
   final DateTime startDay;
-  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay);
+  final User visitedUser;
+  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay,this.visitedUser);
   @override
   State<StatefulWidget> createState() => new WorkoutPlanState();
 }
@@ -30,6 +31,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
 {
   ScrollController controller = ScrollController();
   double topContainer = 0;
+  String userId;
   
   bool closeTopContainer = false;
   
@@ -86,9 +88,14 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
 
 
       animationController.forward();
-      
+      setUser();
 
 
+  }
+
+  void setUser() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString("userId");
   }
 
   void addCurrentWindowEvents()
@@ -182,8 +189,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
 
   Future<http.Response> getExercises(DateTime first, DateTime last)
   async {
-    String dateFirst = formatDate(first,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
-    String dateLast = formatDate(last,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
+    String dateFirst = formatDate(first.subtract(Duration(hours: 12)),[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
+    String dateLast = formatDate(last.add(Duration(hours: 12)),[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var headers = {
@@ -191,7 +198,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var url = Constants.webPath + "users/" + prefs.getString("userId")+ "/exercise-by-date?startDate=$dateFirst&endDate=$dateLast";
+    var url = Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercise-by-date?startDate=$dateFirst&endDate=$dateLast";
     print(url);
     //-by-date?startDate=$dateFirst&endDate=$dateLast
     return http.get(url, headers: headers);
@@ -288,8 +295,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
           ));
   }
 
-  bool canStartTheProgram(){
-    return selectedEvents != null && selectedEvents.length > 0 && isSameDay(selectedDate, DateTime.now());
+  bool canStartTheProgram() {
+    return selectedEvents != null && selectedEvents.length > 0 && isSameDay(selectedDate, DateTime.now()) && userId == widget.visitedUser.userId;
   }
 
   bool isSameDay(DateTime date1, DateTime date2){

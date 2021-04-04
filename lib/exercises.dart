@@ -21,8 +21,8 @@ import 'package:animations/animations.dart';
 class ExercisesPage extends StatefulWidget
 
 {
-
-  ExercisesPage();
+  final User visitedUser;
+  ExercisesPage(this.visitedUser);
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
@@ -222,7 +222,7 @@ class ExersisesState extends State<ExercisesPage>
                         },
                           openBuilder: (_, closeContainer)
                           {
-                              return ExerciseCard(CardType.exercise,curExercise,closeContainer);
+                              return ExerciseCard(CardType.exercise,curExercise,closeContainer,widget.visitedUser);
                           },
                         );
                       })),

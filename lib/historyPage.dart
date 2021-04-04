@@ -15,7 +15,8 @@ import 'exerciseModel.dart';
 
 class HistoryPage extends WorkoutPlanPage
 {
-  HistoryPage(bool isEventListActive, CalendarFormat calendarFormat, Function selectDay, DateTime startDay) : super(isEventListActive, calendarFormat, selectDay, startDay);
+  HistoryPage(bool isEventListActive, CalendarFormat calendarFormat, Function selectDay, DateTime startDay,User visitedUser) : 
+  super(isEventListActive, calendarFormat, selectDay, startDay, visitedUser);
   @override
   State<StatefulWidget> createState() => new HistoryState();
   
@@ -37,7 +38,7 @@ class HistoryState extends WorkoutPlanState
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var url = Constants.webPath + "users/" + prefs.getString("userId")+ "/exercise-history-by-date?startDate=$dateFirst&endDate=$dateLast";
+    var url = Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercise-history-by-date?startDate=$dateFirst&endDate=$dateLast";
     print(url);
     //-by-date?startDate=$dateFirst&endDate=$dateLast
     return http.get(url, headers: headers);

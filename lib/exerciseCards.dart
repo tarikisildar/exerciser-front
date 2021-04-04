@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:better_player/better_player.dart';
 import 'package:date_format/date_format.dart';
@@ -18,11 +19,12 @@ import 'constants.dart';
 
 
 class ExerciseCard extends StatefulWidget{
+  final User visitedUser;
   final CardType cardType;
   final Exercise exercise;
   final VoidCallback closeContainer;
 
-  ExerciseCard(this.cardType,this.exercise,this.closeContainer);
+  ExerciseCard(this.cardType,this.exercise,this.closeContainer,this.visitedUser);
   @override
   State<StatefulWidget> createState() => new ExerciseCardState();
 
@@ -405,19 +407,19 @@ class ExerciseCardState extends State<ExerciseCard>
     List<Map<String,dynamic>> days = [];
     for(int i = 0; i < values.length; i++){
       if(values[i]){
-        var map = {"id" : i};
+        var map = { "id" : i};
         days.add(map);
       }
     }
 
-    UserExercise userExercise = UserExercise(selectedStartingDay,selectedDay,prefs.getString("userId"),prefs.getString("userId"),exerciseDetails,days);
+    UserExercise userExercise = UserExercise(selectedStartingDay,selectedDay,prefs.getString("userId"),widget.visitedUser.userId,exerciseDetails,days);
     print(userExercise.recurrentDays);
     var headers = {
               'Content-type': 'application/json; charset=UTF-8',
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var request = http.post(Constants.webPath + "users/" + prefs.getString("userId")+ "/exercises/",
+    var request = http.post(Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercises/",
     headers: headers,
     body: jsonEncode(userExercise.toJson()));
 
@@ -440,7 +442,7 @@ class ExerciseCardState extends State<ExerciseCard>
                 SizedBox(
                   height: 20,
                 ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectStartingDay,DateTime.now()),
+                WorkoutPlanPage(false,CalendarFormat.month,selectStartingDay,DateTime.now(),widget.visitedUser),
       ]
     );
   }
@@ -456,7 +458,7 @@ class ExerciseCardState extends State<ExerciseCard>
                 SizedBox(
                   height: 20,
                 ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectDay,selectedStartingDay),
+                WorkoutPlanPage(false,CalendarFormat.month,selectDay,selectedStartingDay,widget.visitedUser),
       ]
     );
   }
@@ -474,7 +476,8 @@ class ExerciseCardState extends State<ExerciseCard>
                   values: values,
                   onChanged: (int day) {
                     setState(() {
-                      final index = day % 7;
+                      int index = day % 7;
+          
                       values[index] = !values[index];
                     });
                   },
