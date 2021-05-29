@@ -4,16 +4,19 @@ import 'dart:math';
 import 'package:better_player/better_player.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tflite/tflite.dart';
 
 import 'enums/cardType.dart';
 import 'exerciseModel.dart';
+import 'makeExercise.dart';
 
 class ExerciseCardPlan extends StatefulWidget{
   final CardType cardType;
   final UserExercise exercise;
   final VoidCallback closeContainer;
+  final bool isToday;
 
-  ExerciseCardPlan(this.cardType,this.exercise,this.closeContainer);
+  ExerciseCardPlan(this.cardType,this.exercise,this.closeContainer,this.isToday);
   @override
   State<StatefulWidget> createState() => new ExerciseCardPlanState();
 
@@ -28,6 +31,22 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
       super.initState();
       configureVideo();
     }
+
+  onSelect() {
+
+    loadModel();
+    //DateTime.parse(DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(widget.exercise,null)));
+    
+  }
+  loadModel() async {
+    String res;
+        res = await Tflite.loadModel(
+            model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
+            numThreads: 4
+            );
+    print(res);
+  }
 
   void configureVideo()
     {
@@ -122,6 +141,23 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                           child: Text("Back", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
                           ),
                         ),
+                        
+                      ),
+                      
+                      SizedBox(
+                        width: 160,
+                        child:  widget.isToday ? RaisedButton(
+                          onPressed: () {
+                            onSelect();
+                            },
+                          color:  Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(color: Colors.black)
+                          ),
+                          child: Text("Start The Program", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
+                          ),
+                        ) : SizedBox(),
                       ),
                       
                     ]

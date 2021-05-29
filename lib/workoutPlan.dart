@@ -81,6 +81,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         DateTime todayFirst = new DateTime(now.year, now.month, now.day);
         DateTime todayLast =  new DateTime(now.year, now.month, now.day,23,59,59);
         var histories = findHistories(userExercisesToday[i], todayFirst, todayLast);
+        print(histories);
         if(histories.isNotEmpty){
           exerciseToMakeIx++;
         }
@@ -102,6 +103,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   {
     setState(() {
       events.clear();
+      print("events: " + exercisesData.length.toString());
       for(int i = 0; i < exercisesData.length; i++){
         addEvent(responseList[i].date, exercisesData[i]);
       }
@@ -111,12 +113,13 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   
   void addEvent(DateTime date,Widget widget)
   {
-    if(!events.containsKey(date))
+    DateTime first = new DateTime(date.year, date.month, date.day);
+    if(!events.containsKey(first))
     {
-      events[date] = [widget];
+      events[first] = [widget];
     }
     else{
-      events[date].add(widget);
+      events[first].add(widget);
     }
   }
 
@@ -154,30 +157,35 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
       var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
       var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
 
-      startingDate = startingDate.subtract(Duration(hours: startingDate.hour));
-      endingDate = endingDate.subtract(Duration(hours: endingDate.hour));
-
+      
+      print(" asd: " + userExercise.history.length.toString());
       List<History> recurrentDates = [];
       for (int i = 0; i <userExercise.history.length; i++){
+         print("ex: " + startingDate.toString() + " " + endingDate.toString());
+         
         var history = userExercise.history[i];
+         print("his: " + history.creationDate.toString() );
         if(history.creationDate.isAfter(startingDate) && history.creationDate.isBefore(endingDate)){
           recurrentDates.add(history);
         }
       }
+      print(recurrentDates.length);
       return recurrentDates; 
 
     }
 
   List<DateTime> findRepetitions(UserExercise userExercise, DateTime first, DateTime last)
     {
+
       var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
       var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
-
       var currentDate = startingDate;
+
       List<DateTime> recurrentDates = [];
-      while (currentDate.millisecondsSinceEpoch < endingDate.millisecondsSinceEpoch) 
+      while (currentDate.millisecondsSinceEpoch <= endingDate.millisecondsSinceEpoch) 
       {
-          if(userExercise.recurrentDays.contains(currentDate.weekday))
+
+          if(userExercise.recurrentDays.contains(currentDate.weekday-1))
           {
             recurrentDates.add(currentDate); 
           }
@@ -218,7 +226,9 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
-      var dates = findRepetitions(userExercises[i], first, last);
+      DateTime todayFirst = new DateTime(first.year, first.month, first.day);
+      DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
+      var dates = findRepetitions(userExercises[i], todayFirst, todayLast);
       print(dates);
       for(int j = 0; j < dates.length; j++)
       {
@@ -511,7 +521,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                   );
             }, openBuilder: (_, closeContainer)
             {
-                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer);
+                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer,canStartTheProgram());
             });
           }
         

@@ -29,8 +29,11 @@ class HistoryState extends WorkoutPlanState
   Future<http.Response> getExercises(DateTime first, DateTime last)
   async 
   {
-    String dateFirst = formatDate(first,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
-    String dateLast = formatDate(last,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
+
+    DateTime todayFirst = new DateTime(first.year, first.month, first.day);
+    DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
+    String dateFirst = formatDate(todayFirst,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
+    String dateLast = formatDate(todayLast,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var headers = {
@@ -64,7 +67,10 @@ class HistoryState extends WorkoutPlanState
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
-      var histories = super.findHistories(userExercises[i], first, last);
+      DateTime todayFirst = new DateTime(first.year, first.month, first.day);
+      DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
+      var histories = super.findHistories(userExercises[i], todayFirst, todayLast);
+      print("hisLEngth " + histories.length.toString());
       for(int j = 0; j < histories.length; j++)
       {
         var curExercise = userExercises[i].exerciseDetails.exercise;
@@ -72,6 +78,8 @@ class HistoryState extends WorkoutPlanState
         responseList.add(ClientExercise(curExercise.name, curExercise.difficulty, exerciseDetails.repeat, exerciseDetails.setCount, histories[j].creationDate,history: histories[j]));
       }
     }
+    print("resLEngth " + responseList.length.toString());
+
     List<Widget> listItems = [];
     responseList.forEach((post) {
       listItems.add(
@@ -82,8 +90,9 @@ class HistoryState extends WorkoutPlanState
     });
     setState(() {
       exercisesData = listItems;
+      addCurrentWindowEvents();
+
     });
-    addCurrentWindowEvents();
   }
   @override
   bool canStartTheProgram(){
