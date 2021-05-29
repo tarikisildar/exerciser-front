@@ -57,9 +57,9 @@ flutter:
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
   assets:
-   #- assets/posenet_mv1_075_float_from_checkpoints.tflite
+   - assets/logo.png
+   - assets/posenet_mv1_075_float_from_checkpoints.tflite
    - assets/exercises/
-   - assets/
    - assets/exerciseImages/
    - assets/exerciseVideos/
    # An image asset can refer to one or more resolution-specific "variants", see
