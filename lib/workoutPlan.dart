@@ -59,13 +59,14 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   void initState(){
       super.initState();
       getExerciseData(DateTime.now().subtract(Duration(days: 7)),DateTime.now().add(Duration(days: 7)));
+      
       calendarController = CalendarController();
       //calendarController.setCalendarFormat(CalendarFormat.week);
       events = {};
       selectedEvents = [];
 
-      final selectedDay = DateTime.now();
-
+      final selectedDay = new DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      selectedDate = selectedDay;
       //events[selectedDay] = [exercisesData[0],exercisesData[1],exercisesData[2]];
       //events[selectedDay.subtract(Duration(days: 2))] = [exercisesData[3],exercisesData[2],exercisesData[1]];
 
@@ -216,6 +217,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   {
     responseList.clear();
     var getData = (await getExercises(first, last)).body;
+
     print(getData);
     var exercisesRaw = jsonDecode(getData)["data"] as List;
     userExercises.clear();
@@ -259,6 +261,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
       exercisesData = listItems;
     });
     addCurrentWindowEvents();
+    if(selectedDate.compareTo(first) >= 0 && selectedDate.compareTo(last) <=0 )
+      selectedEvents = events[selectedDate];
   }
 
   Widget exerciseItem(ClientExercise post, bool disabled){
@@ -277,28 +281,33 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                   "assets/logo.png",
                   height: 100,
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      post.name,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      "${post.setCount} Sets x ${post.repCount} Repeats",
-                      style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    disabled ? Text(
-                      "Done",
-                      style: const TextStyle(fontSize: 25, color: Colors.lightGreen, fontWeight: FontWeight.bold),
-                    ) : SizedBox(
-                      height: 10,
-                    ),
-                  ],
-                ),
+                Expanded(child: 
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        post.name,
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
+                        overflow: TextOverflow.fade,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        "${post.setCount} Sets x ${post.repCount} Repeats",
+                        style: const TextStyle(fontSize: 23, color: Colors.black, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.fade,
+                      ),
+                      disabled ? Text(
+                        "Done",
+                        style: const TextStyle(fontSize: 25, color: Colors.lightGreen, fontWeight: FontWeight.bold),
+                      ) : SizedBox(
+                        height: 10,
+                      ),
+                    ],
+                  ),
+                )
+                
                 
               ],
             ),
@@ -317,6 +326,23 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   {
     return date1.year < date2.year || (date1.year == date2.year && date1.month < date2.month) || (date1.year == date2.year && date1.month == date2.month && date1.day < date2.day);
   }
+
+  void selectDay(DateTime date, List<dynamic> events){
+    selectedDate = date;
+    try
+    {
+      widget.selectDay(date);
+    }
+    catch(exception)
+    {
+      print("no selected day event");
+    }
+    animationController.forward(from: 0.0);
+    setState(() {
+      selectedEvents = events;
+        },
+      );
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -328,22 +354,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             children: <Widget>[
               buildCalendar(),
               widget.isEventListActive ? buildEventList() : SizedBox(height:1),
-              SizedBox(
-                        width: size.width * 4/5,
-                        child:  canStartTheProgram() ? RaisedButton(
-                          onPressed: () {
-                            onSelect();
-                            },
-                          color:  Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                            side: BorderSide(color: Colors.black)
-                          ),
-                          child: Text("Start The Program", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
-                          ),
-                        ) : SizedBox(),
-                      ),
-              SizedBox(height: 20)
+              
             ],
           ),
         );
@@ -377,20 +388,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
       },
       events: events,
       onDaySelected: (date, events,holidays) {
-        selectedDate = date;
-        try
-        {
-          widget.selectDay(date);
-        }
-        catch(exception)
-        {
-          print("no selected day event");
-        }
-        animationController.forward(from: 0.0);
-        setState(() {
-          selectedEvents = events;
-            },
-          );
+        
+        selectDay(date,events);
         },
       builders: CalendarBuilders(
       selectedDayBuilder: (context, date, _) {
@@ -474,7 +473,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         children: <Widget>
         [
           Text(
-          'Blank Day',
+          'Day Off!',
           style: TextStyle().copyWith(
             color: Colors.black,
             fontSize: 36.0,
