@@ -8,8 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants.dart';
-import 'exerciseModel.dart';
+import 'models/exerciseModel.dart';
 import 'home.dart';
+import 'models/user.dart';
 
 class PatientsPage extends StatefulWidget
 

@@ -5,7 +5,6 @@ import 'package:date_format/date_format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/constants.dart';
-import 'package:flutter_realtime_detection/exerciseModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
@@ -14,6 +13,10 @@ import 'package:tflite/tflite.dart';
 import 'enums/cardType.dart';
 import 'exerciseCardPlanPage.dart';
 import 'makeExercise.dart';
+import 'models/clientExercise.dart';
+import 'models/history.dart';
+import 'models/user.dart';
+import 'models/userExercise.dart';
 
 class WorkoutPlanPage extends StatefulWidget 
 {
@@ -158,13 +161,10 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
       var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
 
       
-      print(" asd: " + userExercise.history.length.toString());
       List<History> recurrentDates = [];
       for (int i = 0; i <userExercise.history.length; i++){
-         print("ex: " + startingDate.toString() + " " + endingDate.toString());
          
         var history = userExercise.history[i];
-         print("his: " + history.creationDate.toString() );
         if(history.creationDate.isAfter(startingDate) && history.creationDate.isBefore(endingDate)){
           recurrentDates.add(history);
         }

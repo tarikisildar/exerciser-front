@@ -3,9 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/constants.dart';
-import 'package:flutter_realtime_detection/main.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -16,7 +14,8 @@ import 'camera.dart';
 import 'dart:math' as math;
 
 import 'customDialogBox.dart';
-import 'exerciseModel.dart';
+import 'models/userExercise.dart';
+import 'models/videoSimilarityRequest.dart';
 
 
 
@@ -50,6 +49,19 @@ class _CameraPageState extends State<CameraPage>
 
   int cameraIx = 0;
   Input cameraInput;
+
+
+    @override
+  void initState() 
+  {
+    //setSavePoints(SavePoints());
+    super.initState();
+    cameraInput = Input(
+                  checkRecording,
+                  setRecognitions,
+                );
+  }
+
 
   setRecognitions(recognitions, imageHeight, imageWidth) {
     setState(() {
@@ -94,34 +106,28 @@ class _CameraPageState extends State<CameraPage>
     currentSet++
   };
 
-    void printWrapped(String text) {
-  final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
-  pattern.allMatches(text).forEach((match) => print(match.group(0)));
-}
-    Future get _localPath async {
-    // Application documents directory: /data/user/0/{package_name}/{app_name}
-    //final applicationDirectory = await getApplicationDocumentsDirectory();
- 
-    // External storage directory: /storage/emulated/0
+  void printWrapped(String text) {
+    final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((match) => print(match.group(0)));
+  }
+
+  Future get _localPath async {
     final externalDirectory = await getExternalStorageDirectory();
- 
-    // Application temporary directory: /data/user/0/{package_name}/cache
-    //final tempDirectory = await getTemporaryDirectory();
- 
+
     return externalDirectory.path;
   }
+  
   Future _localFile(filename) async {
     final path = await _localPath;
 
     return File('$path/' + filename);
   }
-Future _writeToFile(String text,String filename) async {
+
+
+  Future _writeToFile(String text,String filename) async {
     
- 
     final file = await _localFile(filename);
- 
-    // Write the file
-    File result = await file.writeAsString('$text');
+    await file.writeAsString('$text');
   }
 
   Future<http.Response> getDistance(List<List<Point>> resultsList) async
@@ -129,19 +135,15 @@ Future _writeToFile(String text,String filename) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userId = prefs.getString("userId");
     
-
     UserExercise curEx = widget.exercise;
 
-    var exerciseId = curEx.id;
     List<KeyPoints> keypoints = [];
     for(int i = 0; i < resultsList.length; i++){
       keypoints.add(KeyPoints(resultsList[i]));
     }
-    
 
     KeyPointSequence sequence =  KeyPointSequence(_imageWidth, _imageHeight, keypoints);
 
-    //printWrapped(jsonEncode(keypoints));
     if(Constants.isDebug)
       _writeToFile(jsonEncode(sequence), recordCounter.toString()+ ".json");
 
@@ -165,26 +167,12 @@ Future _writeToFile(String text,String filename) async {
   {
       return getDistance(resultsList);
   }
-  @override
-  void initState() 
-  {
-    //setSavePoints(SavePoints());
-    super.initState();
-    cameraInput = Input(
-                  checkRecording,
-                  setRecognitions,
-                );
-  }
 
-    
-  
 
   void addResults(List<Point> frameResults)
   {
-
     resultsList.add(frameResults);
   }
-
 
 
   void onRecord(BuildContext context) async
@@ -244,8 +232,6 @@ Future _writeToFile(String text,String filename) async {
                   }
                 );
       }
-      //_writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
-      //_writeToFile(response.body, recordCounter.toString()+ ".txt");
       resultsList.clear();
     }
   }

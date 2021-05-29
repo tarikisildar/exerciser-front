@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:tflite/tflite.dart';
 
 import 'enums/cardType.dart';
-import 'exerciseModel.dart';
 import 'makeExercise.dart';
+import 'models/userExercise.dart';
 
 class ExerciseCardPlan extends StatefulWidget{
   final CardType cardType;

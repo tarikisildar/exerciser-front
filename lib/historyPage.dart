@@ -10,7 +10,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
-import 'exerciseModel.dart';
+import 'models/clientExercise.dart';
+import 'models/history.dart';
+import 'models/user.dart';
+import 'models/userExercise.dart';
 
 
 class HistoryPage extends WorkoutPlanPage

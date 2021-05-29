@@ -14,7 +14,8 @@ import 'package:http/http.dart' as http;
 
 
 import 'constants.dart';
-import 'exerciseModel.dart';
+import 'models/exerciseModel.dart';
+import 'models/user.dart';
 
 
 class HomePage extends StatefulWidget 

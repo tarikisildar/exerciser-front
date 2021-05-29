@@ -12,7 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:toggle_switch/toggle_switch.dart';
 
-import 'exerciseModel.dart';
+import 'models/exerciseModel.dart';
+import 'models/user.dart';
 
 
 

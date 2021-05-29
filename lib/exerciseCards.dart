@@ -8,7 +8,7 @@ import 'package:day_selector/day_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
-import 'package:flutter_realtime_detection/exerciseModel.dart';
+import 'package:flutter_realtime_detection/models/exerciseModel.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -16,6 +16,9 @@ import 'package:weekday_selector/weekday_selector.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
+import 'models/exercisedetails.dart';
+import 'models/user.dart';
+import 'models/userExercise.dart';
 
 
 class ExerciseCard extends StatefulWidget{
