@@ -1,24 +1,31 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 
-import 'models.dart';
 
 typedef void Callback(List<dynamic> list, int h, int w);
 
 class Input extends StatefulWidget {
   
   final Callback setRecognitions;
-  final Function posenetOver;
   final Function checkRecord;
   bool isRecording = false;
 
+  _CameraState camState = new _CameraState();
+
+  void changeCamera(){
+    camState.changeCamera();
+  }
   
-  Input(  this.checkRecord,this.setRecognitions,this.posenetOver);
+  Input(  this.checkRecord,this.setRecognitions);
 
   @override
-  _CameraState createState() => new _CameraState();
+  _CameraState createState() => camState;
 }
 
 class _CameraState extends State<Input> {
@@ -26,8 +33,11 @@ class _CameraState extends State<Input> {
   bool isDetecting = false;
   List<CameraDescription> cameras;
   //List<CameraImage> frames = new List<CameraImage>();
-  
-  
+
+  int camIx = 1;
+  int frameOrder = 0;
+  Uint8List _imageFile;
+
 
   void setCamera() async{
     try {
@@ -35,11 +45,11 @@ class _CameraState extends State<Input> {
     } on CameraException catch (e) {
     print('Error: $e.code\nError Message: $e.message');
      }
-     if (cameras == null || cameras.length < 1) {
+     if (cameras == null || cameras.length < camIx +1) {
       print('No camera is found');
     } else {
       controller = new CameraController(
-        cameras[0],
+        cameras[camIx],
         ResolutionPreset.high
       );
       controller.initialize().then((_) {
@@ -49,15 +59,8 @@ class _CameraState extends State<Input> {
         setState(() {});
 
         controller.startImageStream((CameraImage img) {
-            //print(widget.checkRecord().toString() + "vs" + widget.isRecording.toString());
-            if(widget.checkRecord() != widget.isRecording)
-            {
-              print("checkRecord:" + widget.isRecording.toString());
-              record(widget.isRecording);
-              widget.isRecording = widget.checkRecord();
-              
-            }
-            if (widget.isRecording) 
+            
+            if (widget.checkRecord()) 
             {
               if(!isDetecting)
                 {
@@ -68,16 +71,15 @@ class _CameraState extends State<Input> {
                           }).toList(),
                           imageHeight: img.height,
                           imageWidth: img.width,
+                          rotation: camIx == 0 ? 90 : -90,
                           numResults: 1,
-                          asynch: true,
-                          threshold: 0.7,
+                          asynch: false,
+                          threshold: 0.1,
                           nmsRadius: 20
                         ).then((recognitions) {
                           widget.setRecognitions(recognitions, img.height, img.width);
                           isDetecting = false;
-                          
                         });
-                    
                 }
               //frames.add(img); 
             }
@@ -88,6 +90,7 @@ class _CameraState extends State<Input> {
 
   }
 
+
   @override
   void initState() {
     super.initState();
@@ -95,19 +98,18 @@ class _CameraState extends State<Input> {
     
   }
 
-  void record(bool isRec)
-  async{
-    //print(widget.isRecording);
-    if(isRec)
-    {
-      
-      //await finishRecord();
-      widget.posenetOver();
-      //frames.clear();
+  void changeCamera(){
+    try{
+      controller.stopImageStream();
+
     }
-    //widget.isRecording =! widget.isRecording;
-    
+    catch(e){
+      print("error");
+    }
+    camIx = camIx == 0 ? 1: 0;
+    setCamera();
   }
+
    Future<void>  finishRecord() async{
     int ix = 0;
     int startTime = new DateTime.now().millisecondsSinceEpoch;
@@ -135,11 +137,11 @@ class _CameraState extends State<Input> {
     var previewRatio = previewH / previewW;
 
     return OverflowBox(
-      maxHeight:
-          screenRatio > previewRatio ? screenH : screenW / previewW * previewH,
-      maxWidth:
-          screenRatio > previewRatio ? screenH / previewH * previewW : screenW,
-      child: CameraPreview(controller),
+        maxHeight:
+            screenRatio > previewRatio ? screenH : screenW / previewW * previewH,
+        maxWidth:
+            screenRatio > previewRatio ? screenH / previewH * previewW : screenW,
+        child: CameraPreview(controller),
     );
   }
 }
