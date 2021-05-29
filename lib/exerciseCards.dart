@@ -62,6 +62,9 @@ class ExerciseCardState extends State<ExerciseCard>
 
     void configureVideo()
     {
+      //"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+      String lowerName = widget.exercise.name.toLowerCase();
+      lowerName = lowerName.replaceAll(' ', '');
       BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
       aspectRatio: 16 / 9,
@@ -69,7 +72,7 @@ class ExerciseCardState extends State<ExerciseCard>
       );
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.NETWORK,
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        "http://165.22.67.71:5002/files/${lowerName}.mp4",
         cacheConfiguration: BetterPlayerCacheConfiguration(useCache: true),
       );
       _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);

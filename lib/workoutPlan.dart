@@ -277,24 +277,29 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Image.asset(
-                  "assets/logo.png",
-                  height: 100,
-                ),
+                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },),
+                SizedBox(width:4),
                 Expanded(child: 
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
                         post.name,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                        overflow: TextOverflow.fade,
+                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                       SizedBox(
                         height: 10,
                       ),
                       Text(
-                        "${post.setCount} Sets x ${post.repCount} Repeats",
+                        "${post.setCount} Sets \n${post.repCount} Repeats",
                         style: const TextStyle(fontSize: 23, color: Colors.black, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.fade,
                       ),

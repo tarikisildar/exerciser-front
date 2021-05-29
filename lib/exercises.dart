@@ -124,10 +124,14 @@ class ExersisesState extends State<ExercisesPage>
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
-                Image.asset(
-                  "assets/logo.png",
-                  height: double.infinity,
-                )
+                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },)
+                
               ],
             ),
           )));
