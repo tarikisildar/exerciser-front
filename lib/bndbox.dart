@@ -1,11 +1,7 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_realtime_detection/home.dart';
 import 'package:flutter_realtime_detection/savePoints.dart';
-import 'package:tuple/tuple.dart';
 import 'dart:math' as math;
-import 'models.dart';
 import 'draw.dart';
 
 
@@ -148,9 +144,10 @@ class BndBox extends StatelessWidget {
         var list = re["keypoints"].values.map<Widget>((k) {
           var _x = k["x"];
           var _y = k["y"];
+          var _score = k["score"];
           
           var scaleW, scaleH, x, y;
-          framePoints.add(Point(k["part"],_x, _y));
+          framePoints.add(Point(k["part"],_x, _y,_score));
           if (screenH / screenW > previewH / previewW) {
             scaleW = screenH / previewH * previewW;
             scaleH = screenH;
@@ -190,15 +187,15 @@ class BndBox extends StatelessWidget {
       lists..addAll(_renderLines());
       addResult(framePoints);
       return lists;
+      
     }
 
     
     var keyPoints = _renderKeypoints();
 
     return Stack(
-      children: 
-          keyPoints,
-          
-    );
+            children: 
+                keyPoints
+      );
   }
 }

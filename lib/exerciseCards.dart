@@ -407,7 +407,7 @@ class ExerciseCardState extends State<ExerciseCard>
     List<Map<String,dynamic>> days = [];
     for(int i = 0; i < values.length; i++){
       if(values[i]){
-        var map = { "id" : i};
+        var map = { "id" : (i-1)%7};
         days.add(map);
       }
     }

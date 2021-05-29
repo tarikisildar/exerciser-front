@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage>
             });
     print(response.body);
     user = User.fromJson(jsonDecode(response.body)["logged_in_as"]);
-    name = widget.visitedUser.userName == user.userName ? "My" : widget.visitedUser.userName.split("@")[0] + "'s";
+    name = (widget.visitedUser.userName == user.userName || widget.visitedUser.userName == "")  ? "My" : widget.visitedUser.userName.split("@")[0] + "'s";
     currentPageName = "$name Workout Plan";
   }
 
