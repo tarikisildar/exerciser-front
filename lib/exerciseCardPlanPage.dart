@@ -66,15 +66,15 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
 
   Widget card(){
     final deviceSize = MediaQuery.of(context).size;
-    final cardWidth = min(deviceSize.width * 0.75, 360.0);
+    final cardWidth = deviceSize.width * 0.75;
     return Container(
           height: deviceSize.height * 0.9,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          width: deviceSize.width * 0.9,
           decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 10.0),
           ]),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -130,7 +130,7 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                       children: <Widget>
                       [
                       SizedBox(
-                        width: 160,
+                        width: cardWidth/2-5,
                         child:  RaisedButton(
                           onPressed: () {widget.closeContainer();},
                           color: Colors.white,
@@ -138,14 +138,16 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                             borderRadius: BorderRadius.circular(18.0),
                             side: BorderSide(color: Colors.black)
                           ),
-                          child: Text("Back", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
+                          child: Text("Back", style : TextStyle(fontSize: 13, color: Colors.black, fontWeight: FontWeight.bold)
                           ),
                         ),
                         
                       ),
-                      
                       SizedBox(
-                        width: 160,
+                        width: 10,
+                      ),
+                      SizedBox(
+                        width: cardWidth/2-5,
                         child:  widget.isToday ? RaisedButton(
                           onPressed: () {
                             onSelect();
@@ -155,7 +157,7 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                             borderRadius: BorderRadius.circular(18.0),
                             side: BorderSide(color: Colors.black)
                           ),
-                          child: Text("Start The Program", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
+                          child: Text("Start The Exercise",textAlign: TextAlign.center, style : TextStyle(fontSize: 13, color: Colors.black, fontWeight: FontWeight.bold)
                           ),
                         ) : SizedBox(),
                       ),

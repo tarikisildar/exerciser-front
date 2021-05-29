@@ -89,15 +89,16 @@ class ExerciseCardState extends State<ExerciseCard>
   }
   Widget card(){
     final deviceSize = MediaQuery.of(context).size;
-    final cardWidth = min(deviceSize.width * 0.75, 360.0);
+    final cardWidth = deviceSize.width * 0.75;
     return Container(
           height: deviceSize.height * 0.9,
+          width: deviceSize.width * 0.9,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 10.0),
           ]),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -144,7 +145,7 @@ class ExerciseCardState extends State<ExerciseCard>
                       children: <Widget>
                       [
                       SizedBox(
-                        width: 160,
+                        width: cardWidth/2-5,
                         child:  RaisedButton(
                           onPressed: () {widget.closeContainer();},
                           color: Colors.white,
@@ -152,7 +153,7 @@ class ExerciseCardState extends State<ExerciseCard>
                             borderRadius: BorderRadius.circular(18.0),
                             side: BorderSide(color: Colors.black)
                           ),
-                          child: Text("Back", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
+                          child: Text("Back", style : TextStyle(fontSize: 13, color: Colors.black, fontWeight: FontWeight.bold)
                           ),
                         ),
                       ),
@@ -161,7 +162,7 @@ class ExerciseCardState extends State<ExerciseCard>
                         width: 10,
                       ),
                       SizedBox(
-                        width: 160,
+                        width: cardWidth/2-5,
                         child:  RaisedButton(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
@@ -174,7 +175,7 @@ class ExerciseCardState extends State<ExerciseCard>
                           },
                           color: Colors.black,
                           
-                          child: Text("Add To Schedule", style : TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)
+                          child: Text("Add To Schedule",textAlign: TextAlign.center, style : TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold)
                           ),
                         ),
                       ),
@@ -286,6 +287,8 @@ class ExerciseCardState extends State<ExerciseCard>
   Widget addToPlan()
   { 
     final deviceSize = MediaQuery.of(context).size;
+      final cardWidth = deviceSize.width * 0.75;
+
     return Container(
       height: deviceSize.height * 0.9,
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -334,7 +337,7 @@ class ExerciseCardState extends State<ExerciseCard>
                   children: <Widget>
                   [
                   SizedBox(
-                    width: 160,
+                    width: cardWidth/2-5,
                     child:  RaisedButton(
                       onPressed: () {setState(() {
                           configureVideo();
@@ -351,7 +354,7 @@ class ExerciseCardState extends State<ExerciseCard>
                         borderRadius: BorderRadius.circular(18.0),
                         side: BorderSide(color: Colors.black)
                       ),
-                      child: Text("Back", style : TextStyle(fontSize: 17, color: Colors.black, fontWeight: FontWeight.bold)
+                      child: Text("Back", style : TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ),
@@ -360,7 +363,7 @@ class ExerciseCardState extends State<ExerciseCard>
                     width: 10,
                   ),
                   SizedBox(
-                    width: 160,
+                    width: cardWidth/2-5,
                     child:  RaisedButton(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.0),
@@ -386,7 +389,7 @@ class ExerciseCardState extends State<ExerciseCard>
                       },
                       color: Colors.black,
                       
-                      child: Text(calendarStates.length < 3 ? "Next" : "Add To Plan" , style : TextStyle(fontSize: 17, color: Colors.white, fontWeight: FontWeight.bold)
+                      child: Text(calendarStates.length < 3 ? "Next" : "Add To Plan" , style : TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ),
