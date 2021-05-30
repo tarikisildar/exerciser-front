@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
@@ -7,12 +6,10 @@ import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/doctorDashboard.dart';
 import 'package:flutter_realtime_detection/enums/userRole.dart';
 import 'package:flutter_realtime_detection/home.dart';
-import 'package:flutter_realtime_detection/patients.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:toggle_switch/toggle_switch.dart';
 
-import 'models/exerciseModel.dart';
 import 'models/user.dart';
 
 

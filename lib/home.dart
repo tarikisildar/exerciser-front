@@ -7,6 +7,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
 import 'package:flutter_realtime_detection/history.dart';
 import 'package:flutter_realtime_detection/historyPage.dart';
+import 'package:flutter_realtime_detection/login.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -176,11 +177,28 @@ class _HomePageState extends State<HomePage>
                         
                       }
                     ),
+                    Spacer(),
+                    IconButton(icon: Icon(Icons.subdirectory_arrow_left, color: Colors.black), 
+                      onPressed: () {setState(() {
+                        goBack();
+                      });}
+                    ),
+
                   ]
                 )
             )
           )
       );
+    }
+    void goBack(){
+      if(Navigator.of(context).canPop())
+      {
+        Navigator.of(context).pop();
+      }
+      else
+      {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
+      }
     }
 }
 

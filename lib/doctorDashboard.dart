@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/patients.dart';
 
+import 'login.dart';
+
 class DoctorPage extends StatefulWidget{
 
   DoctorPage();
@@ -107,13 +109,27 @@ class DoctorPageState extends State<DoctorPage>{
                         });
                       }
                     ),
-                    
-                    
+                    Spacer(),
+                    IconButton(icon: Icon(Icons.subdirectory_arrow_left, color: Colors.black), 
+                      onPressed: () {setState(() {
+                        goBack();
+                      });}
+                    ),
                   ]
                 )
             )
           )
       );
+    }
+    void goBack(){
+      if(Navigator.of(context).canPop())
+      {
+        Navigator.of(context).pop();
+      }
+      else
+      {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
+      }
     }
 
 }

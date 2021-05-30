@@ -139,7 +139,7 @@ class PatientsState extends State<PatientsPage>
                       return GestureDetector(
                       onTap : () {  
                         setState(() {
-                          Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          Navigator.of(context).push(MaterialPageRoute(
                                 builder: (context) => HomePage(patients[index])
                               ));
                         });
