@@ -119,10 +119,13 @@ class HistoryState extends WorkoutPlanState
                 post.history.type == ExerciseHistoryType.uncompleted ? Icon ( Icons.remove, color: Colors.black) :
                 (post.history.repeat - post.repCount).abs() > 0.25 * post.repCount ? Icon(Icons.cancel, color: Colors.red) : 
                 Icon ( Icons.check, color: Colors.green),
-                Image.asset(
-                  "assets/logo.png",
-                  height: double.infinity,
-                ),
+                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[

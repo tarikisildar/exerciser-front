@@ -112,10 +112,13 @@ class UserHistoryState extends State<UserHistoryPage>{
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 post["isCorrect"] ? Icon ( Icons.check, color: Colors.green) : Icon(Icons.cancel, color: Colors.red),
-                Image.asset(
-                  "assets/logo.png",
-                  height: 100,
-                ),
+                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[

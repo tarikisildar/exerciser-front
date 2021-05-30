@@ -502,7 +502,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                     onTap : () {  
                         setState(() {
                           openContainer();
-                          currentExercise = userExercises[index];
+                          currentExercise = userExercises[index+1];
                         });
                       },
                       child: Opacity(
