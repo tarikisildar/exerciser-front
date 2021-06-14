@@ -1,8 +1,8 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
 import 'dart:math' as math;
 import 'draw.dart';
+import 'models/point.dart';
 
 
 class BndBox extends StatelessWidget {
@@ -119,12 +119,16 @@ class BndBox extends StatelessWidget {
 
           var pointTo = pointCoordinates[pointName];
           var pointFrom = pointCoordinates[element];
+          final paint = Paint()
+          ..color = Colors.red
+          ..strokeWidth = 8;
           return  Positioned(
 
             width: 100,
             height: 12,           
             child: Container(
               child: CustomPaint(
+                size: Size.infinite,
                 painter: DrawLine([pointFrom[0],pointFrom[1],pointTo[0],pointTo[1]]),
               ),
             )
@@ -171,12 +175,12 @@ class BndBox extends StatelessWidget {
             height: 12,
             child: Container(
               child: Text(
-                    "● ${k["part"]}",
+                    "● ",
                     style: TextStyle(
-                    color: Color.fromRGBO(37, 213, 253, 1.0),
+                    color: Colors.red,
                     fontSize: 12.0,
                 ),
-              ),              
+              ),           
             ),
           );
           
