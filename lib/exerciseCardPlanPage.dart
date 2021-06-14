@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:better_player/better_player.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_realtime_detection/models/exerciseDetails.dart';
+import 'package:flutter_realtime_detection/models/workout.dart';
 import 'package:tflite/tflite.dart';
 
 import 'enums/cardType.dart';
@@ -12,11 +14,12 @@ import 'models/userExercise.dart';
 
 class ExerciseCardPlan extends StatefulWidget{
   final CardType cardType;
-  final UserExercise exercise;
+  final ExerciseDetails exercise;
   final VoidCallback closeContainer;
   final bool isToday;
+  final Workout visitedWorkout;
 
-  ExerciseCardPlan(this.cardType,this.exercise,this.closeContainer,this.isToday);
+  ExerciseCardPlan(this.cardType,this.exercise,this.closeContainer,this.isToday,this.visitedWorkout);
   @override
   State<StatefulWidget> createState() => new ExerciseCardPlanState();
 
@@ -36,7 +39,7 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
 
     loadModel();
     //DateTime.parse(DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(widget.exercise,null)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(widget.exercise,null,widget.visitedWorkout)));
     
   }
   loadModel() async {
@@ -45,13 +48,12 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-    print(res);
   }
 
   void configureVideo()
     {
       //"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-      String lowerName = widget.exercise.exerciseDetails.exercise.name.toLowerCase();
+      String lowerName = widget.exercise.exercise.name.toLowerCase();
       lowerName = lowerName.replaceAll(' ', '');
       BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
@@ -60,7 +62,7 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
       );
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.NETWORK,
-        "http://165.22.67.71:5002/files/${lowerName}.mp4",
+        widget.exercise.exercise.videoUrl,
         cacheConfiguration: BetterPlayerCacheConfiguration(useCache: true),
       );
       _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
@@ -92,11 +94,11 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                     ),
 
                     Text(
-                      widget.exercise.exerciseDetails.exercise.name,
+                      widget.exercise.exercise.name,
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                     Text(
-                      widget.exercise.exerciseDetails.exercise.difficulty,
+                      widget.exercise.exercise.difficulty,
                       style: const TextStyle(fontSize: 17, color: Colors.grey),
                     ),
                     SizedBox(
@@ -115,11 +117,11 @@ class ExerciseCardPlanState extends State<ExerciseCardPlan>
                     ),
 
                     Text(
-                      widget.exercise.exerciseDetails.setCount.toString() + " Sets",
+                      widget.exercise.setCount.toString() + " Sets",
                       style: const TextStyle(fontSize: 27, color: Colors.grey),
                     ),
                     Text(
-                      widget.exercise.exerciseDetails.repeat.toString() + " Repeats Each",
+                      widget.exercise.repeat.toString() + " Repeats Each",
                       style: const TextStyle(fontSize: 27, color: Colors.grey),
                     ),
                     Expanded(child: 

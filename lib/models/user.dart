@@ -1,15 +1,20 @@
+import 'package:flutter_realtime_detection/enums/userRole.dart';
+
 class User
 {
   String userId;
   String userName;
-  User(this.userId,this.userName);
+  List roles;
+  User(this.userId,this.userName,this.roles);
 
   User.fromJson(Map<String, dynamic> json) : 
-    userId = json["_id"],
-    userName = json["username"];
+    userId = json["id"],
+    userName = json["username"],
+    roles = [userRoleMap[json["roles"][0]]];
   Map<String, dynamic> toJson() => {
-    '_id' : userId,
-    'userName' : userName
+    'id' : userId,
+    'userName' : userName,
+    'roles': [userRoleParser[roles[0]]] 
   };
   
 }

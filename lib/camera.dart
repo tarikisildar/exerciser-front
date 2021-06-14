@@ -50,7 +50,8 @@ class _CameraState extends State<Input> {
     } else {
       controller = new CameraController(
         cameras[camIx],
-        ResolutionPreset.high
+        ResolutionPreset.high,
+        enableAudio: true
       );
       controller.initialize().then((_) {
         if (!mounted) {
@@ -141,7 +142,11 @@ class _CameraState extends State<Input> {
             screenRatio > previewRatio ? screenH : screenW / previewW * previewH,
         maxWidth:
             screenRatio > previewRatio ? screenH / previewH * previewW : screenW,
-        child: CameraPreview(controller),
+        child: Transform(
+            alignment: Alignment.center,
+            transform: camIx == 1 ? Matrix4.rotationY(math.pi):Matrix4.rotationY(0),
+            child: CameraPreview(controller),
+          ),
     );
   }
 }

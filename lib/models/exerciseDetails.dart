@@ -1,27 +1,34 @@
 import 'dart:io';
+import 'package:flutter_realtime_detection/models/history.dart';
+
 import 'exerciseModel.dart';
 
 class ExerciseDetails
 {
-  DateTime creationDate;
   String id;
   final Exercise exercise;
   final int repeat;
   final int setCount;
+  List<History> history;
+  final List recurrentDays;
 
-  ExerciseDetails(this.exercise,this.repeat,this.setCount);
+
+
+  ExerciseDetails(this.exercise,this.repeat,this.setCount,this.recurrentDays);
 
   ExerciseDetails.fromJson(Map<String, dynamic> json)
-    : creationDate = HttpDate.parse(json['creationDate']),
-      id = json['_id'],
+    : id = json['id'],
       exercise = Exercise.fromJson(json['exercise']),
-      repeat = json['repeat'],
-      setCount = json['setCount'];
+      repeat = json['repetitionCount'],
+      setCount = json['setCount'],
+      recurrentDays = json['recurrentDays'],
+      history = json['history'] != null ? json['history'].map<History>((e) => History.fromJson(e)).toList() : null;
 
   Map<String, dynamic> toJson() => 
   {
-    'exercise' : exercise,
-    'repeat' : repeat,
-    'setCount' : setCount
+    'exerciseId' : exercise.id,
+    'repetitionCount' : repeat,
+    'setCount' : setCount,
+    'recurrentDays' : recurrentDays,
   };
 }

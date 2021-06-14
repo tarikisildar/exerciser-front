@@ -9,6 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
 import 'package:flutter_realtime_detection/models/exerciseModel.dart';
+import 'package:flutter_realtime_detection/models/workout.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -16,18 +17,19 @@ import 'package:weekday_selector/weekday_selector.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
-import 'models/exercisedetails.dart';
+import 'models/exerciseDetails.dart';
 import 'models/user.dart';
 import 'models/userExercise.dart';
 
 
 class ExerciseCard extends StatefulWidget{
   final User visitedUser;
+  final Workout visitedWorkout;
   final CardType cardType;
   final Exercise exercise;
   final VoidCallback closeContainer;
 
-  ExerciseCard(this.cardType,this.exercise,this.closeContainer,this.visitedUser);
+  ExerciseCard(this.cardType,this.exercise,this.closeContainer,this.visitedUser,this.visitedWorkout);
   @override
   State<StatefulWidget> createState() => new ExerciseCardState();
 
@@ -54,7 +56,7 @@ class ExerciseCardState extends State<ExerciseCard>
     void initState(){
       super.initState();
       configureVideo();
-      calendarStates.add(setStartingDateState());
+      calendarStates.add(setDays());
       repeatCount = 5;
       setCount = 1;
       selectedStartingDay = DateTime.now();
@@ -72,7 +74,7 @@ class ExerciseCardState extends State<ExerciseCard>
       );
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.NETWORK,
-        "http://165.22.67.71:5002/files/${lowerName}.mp4",
+        widget.exercise.videoUrl,
         cacheConfiguration: BetterPlayerCacheConfiguration(useCache: true),
       );
       _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
@@ -320,14 +322,14 @@ class ExerciseCardState extends State<ExerciseCard>
                 SizedBox(
                   height: 20,
                 ),
-                calendarStates.length > 2 ? Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
                     
                       repCountButton(),
                       setCountButton()
                     ],      
-                  ) : SizedBox(width:1),
+                  ) ,
             
                 Expanded(
                   child:SizedBox(
@@ -374,25 +376,15 @@ class ExerciseCardState extends State<ExerciseCard>
                       ),
                       onPressed: () {
                         setState(() {
-                          switch(calendarStates.length){
-                            case 1:
-                              calendarStates.add(setEndingDateState());
-                              break;
-                            case 2:
-                              calendarStates.add(setDays());
-                              break;
-                            case 3:
                               addToThePlan();
                               
                               widget.closeContainer();
-                              break;
-                          }
                         });
                         
                       },
                       color: Colors.black,
                       
-                      child: Text(calendarStates.length < 3 ? "Next" : "Add To Plan" , style : TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)
+                      child: Text("Add To Plan" , style : TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ),
@@ -411,66 +403,29 @@ class ExerciseCardState extends State<ExerciseCard>
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
     //Exercise exerciseModel = Exercise(widget.exercise.exercise.id,widget.exercise.exercise.name,widget.exercise.exercise.difficulty,widget.exercise.exercise.);
-    ExerciseDetails exerciseDetails = ExerciseDetails(widget.exercise,repeatCount,setCount);
 
-    List<Map<String,dynamic>> days = [];
+    List<int> days = [];
     for(int i = 0; i < values.length; i++){
       if(values[i]){
         var map = { "id" : (i-1)%7};
-        days.add(map);
+        days.add((i-1)%7);
       }
     }
+    ExerciseDetails exerciseDetails = ExerciseDetails(widget.exercise,repeatCount,setCount,days);
 
-    UserExercise userExercise = UserExercise(selectedStartingDay,selectedDay,prefs.getString("userId"),widget.visitedUser.userId,exerciseDetails,days);
-    print(userExercise.recurrentDays);
     var headers = {
               'Content-type': 'application/json; charset=UTF-8',
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var request = http.post(Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercises/",
+    var request = http.post(Constants.webPath + "workouts/" + widget.visitedWorkout.id+ ":addExerciseSet",
     headers: headers,
-    body: jsonEncode(userExercise.toJson()));
+    body: jsonEncode(exerciseDetails.toJson()));
 
-    print(jsonEncode(userExercise.toJson()));
-    print((await request).body);
   }
 
 
 
-
-
-  Widget setStartingDateState()
-  {
-    return Column(
-      children: <Widget>[
-                Text(
-                      "Select The Starting Date",
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                SizedBox(
-                  height: 20,
-                ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectStartingDay,DateTime.now(),widget.visitedUser),
-      ]
-    );
-  }
-
-  Widget setEndingDateState()
-  {
-    return Column(
-      children: <Widget>[
-                Text(
-                      "Select The Ending Date",
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                SizedBox(
-                  height: 20,
-                ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectDay,selectedStartingDay,widget.visitedUser),
-      ]
-    );
-  }
   Widget setDays(){
     return Column(
       children: <Widget>[

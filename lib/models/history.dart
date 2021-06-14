@@ -7,21 +7,22 @@ class History
   String id;
   DateTime creationDate;
   int repeat;
-  ExerciseHistoryType type;
+  ExerciseHistoryType status;
 
 
-  History(this.id, this.creationDate, this.repeat, this.type);
+  History(this.id, this.creationDate,this.status, this.repeat);
 
   History.fromJson(Map<String, dynamic> json)
-    : id = json['_id'],
-      creationDate = HttpDate.parse(json['creationDate']),
-      repeat = json['userRepeat'],
-      type = ExerciseHistoryType.values[json['type']];
+    : id = json['id'],
+      creationDate = DateTime.parse(json['creationDate']),
+      repeat = json['repetitionCount'],
+      status = exerciseHistoryMap[json['status']];
 
 
   Map<String, dynamic> toJson() => {
     'id' : id,
     'creationDate' : creationDate,
-    'userRepeat' : repeat
+    'repetitionCount' : repeat,
+    'status' : exerciseHistoryParser[status]
   };
 }

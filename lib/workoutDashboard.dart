@@ -1,66 +1,46 @@
-
-
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_realtime_detection/exercises.dart';
-import 'package:flutter_realtime_detection/historyPage.dart';
-import 'package:flutter_realtime_detection/login.dart';
-import 'package:flutter_realtime_detection/workoutPlan.dart';
+import 'package:flutter_realtime_detection/userWorkoutPlans.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 
-
 import 'constants.dart';
+import 'login.dart';
 import 'models/user.dart';
-import 'models/workout.dart';
 
-
-class HomePage extends StatefulWidget 
+class WorkoutDashBoard extends StatefulWidget
 {
   final User visitedUser;
-  final Workout visitedWorkout;
-  HomePage(this.visitedUser,this.visitedWorkout);
+  WorkoutDashBoard(this.visitedUser);
 
   @override
-  _HomePageState createState() => new _HomePageState();
+  State<StatefulWidget> createState() => new WorkoutDashboardState(); 
 }
 
-class _HomePageState extends State<HomePage> 
+class WorkoutDashboardState extends State<WorkoutDashBoard>
 {
+
   bool isSideBarActive = false;
   double screenHeight;
   double screenWidth;
-  String currentPageName = "My Workout Plan";
-  Widget currentPage; 
+  String currentPageName = "My Workouts";
+  Widget currentPage;
 
   User user;
   String name;
-
-  void setUser() async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var response = await http.get("${Constants.webPath}users/users/me",
-    headers: {
-              'Content-type': 'application/json',
-              'Accept': 'application/json',
-              'authorization' : prefs.getString("token")
-            });
-    user = User.fromJson(jsonDecode(response.body));
-    name = (widget.visitedUser.userName == user.userName || widget.visitedUser.userName == "")  ? "My" : widget.visitedUser.userName.split("@")[0] + "'s";
-    currentPageName = "$name Workout Plan";
-  }
+  final Duration duration = const Duration(milliseconds: 100);
 
   @override
-  void initState()
-  {
+  void initState() {
     super.initState();
-    currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now(),widget.visitedUser,widget.visitedWorkout);
+    currentPage = UserWorkoutPlans(widget.visitedUser);
     setUser();
+
   }
 
 
-  final Duration duration = const Duration(milliseconds: 100);
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -75,8 +55,8 @@ class _HomePageState extends State<HomePage>
         ],
       ),
     );
-    
   }
+
   Widget dashboard(context){
     
     return AnimatedPositioned(
@@ -90,7 +70,7 @@ class _HomePageState extends State<HomePage>
           Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            
+
             title: new Text(currentPageName, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
             centerTitle: true,
             elevation: 0,
@@ -115,7 +95,6 @@ class _HomePageState extends State<HomePage>
       )
     );
   }
-
   Widget sideBarMenu(context)
     {
       return SafeArea(
@@ -146,33 +125,8 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "$name Workout Plan";
                           isSideBarActive = false;
-                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now(),widget.visitedUser,widget.visitedWorkout);
+                          currentPage = UserWorkoutPlans(widget.visitedUser);
                         });
-                      }
-                    ),
-                    SizedBox(height:10),
-                    IconButton(
-                      icon: Icon(Icons.history_outlined, color: Colors.black),
-                      onPressed: () {
-                        setState(() {
-                          currentPageName = "$name Workout History";
-                          isSideBarActive = false;
-                          currentPage = HistoryPage(true,CalendarFormat.week,(){},DateTime.utc(2020),widget.visitedUser,widget.visitedWorkout);
-                        });
-                        
-                      }
-                    ),
-                    SizedBox(height:10),
-                    
-                    IconButton(
-                      icon: Icon(Icons.fitness_center_outlined, color: Colors.black),
-                      onPressed: () {
-                        setState(() {
-                          currentPageName = "Explore";
-                          isSideBarActive = false;
-                          currentPage = ExercisesPage(widget.visitedUser,widget.visitedWorkout);
-                        });
-                        
                       }
                     ),
                     Spacer(),
@@ -181,7 +135,6 @@ class _HomePageState extends State<HomePage>
                         goBack();
                       });}
                     ),
-
                   ]
                 )
             )
@@ -198,5 +151,17 @@ class _HomePageState extends State<HomePage>
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
       }
     }
-}
+    void setUser() async{
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      var response = await http.get("${Constants.webPath}users/users/me",
+      headers: {
+                'Content-type': 'application/json',
+                'Accept': 'application/json',
+                'authorization' : prefs.getString("token")
+              });
+      user = User.fromJson(jsonDecode(response.body));
+      name = (widget.visitedUser.userName == user.userName || widget.visitedUser.userName == "")  ? "My" : widget.visitedUser.userName.split("@")[0] + "'s";
+      currentPageName = "$name Workout Plan";
+  }
 
+}

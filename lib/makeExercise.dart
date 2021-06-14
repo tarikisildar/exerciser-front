@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/constants.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
+import 'package:flutter_realtime_detection/models/exerciseDetails.dart';
+import 'package:flutter_realtime_detection/speechRecognititon.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,19 +15,22 @@ import 'camera.dart';
 import 'dart:math' as math;
 
 import 'customDialogBox.dart';
+import 'models/point.dart';
 import 'models/userExercise.dart';
 import 'models/videoSimilarityRequest.dart';
+import 'models/workout.dart';
 
 
 
 
 class CameraPage extends StatefulWidget
 {
-  final UserExercise exercise;
+  final ExerciseDetails exercise;
+  final Workout workout;
   final Function nextExercise;
 
 
-  CameraPage(this.exercise,this.nextExercise);
+  CameraPage(this.exercise,this.nextExercise,this.workout);
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -35,7 +39,6 @@ class CameraPage extends StatefulWidget
 
 class _CameraPageState extends State<CameraPage>
 {
-  //SavePoints savePoints;
   List<dynamic> _recognitions;
   bool isDebug = false;
 
@@ -54,7 +57,6 @@ class _CameraPageState extends State<CameraPage>
     @override
   void initState() 
   {
-    //setSavePoints(SavePoints());
     super.initState();
     cameraInput = Input(
                   checkRecording,
@@ -87,9 +89,7 @@ class _CameraPageState extends State<CameraPage>
     onRecord(context);
   }
 
-  setSavePoints(SavePoints svPoints){
-    //savePoints = svPoints;
-  }
+
   
   
   exitToMenu() => 
@@ -98,7 +98,7 @@ class _CameraPageState extends State<CameraPage>
   };
 
   nextExercise() =>{
-    widget.nextExercise(),
+    //widget.nextExercise(),
     exitToMenu()
   };
 
@@ -135,7 +135,7 @@ class _CameraPageState extends State<CameraPage>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userId = prefs.getString("userId");
     
-    UserExercise curEx = widget.exercise;
+    ExerciseDetails curEx = widget.exercise;
 
     List<KeyPoints> keypoints = [];
     for(int i = 0; i < resultsList.length; i++){
@@ -148,12 +148,10 @@ class _CameraPageState extends State<CameraPage>
       _writeToFile(jsonEncode(sequence), recordCounter.toString()+ ".json");
 
 
-    String exerciseName = curEx.exerciseDetails.exercise.name;
-    VideoSimilarityRequest videoSim = VideoSimilarityRequest(0,_imageWidth,_imageHeight,keypoints,15,15,exerciseName);
-    print(jsonEncode(videoSim));
+    String exerciseName = curEx.exercise.name;
+    VideoSimilarityRequest videoSim = VideoSimilarityRequest(_imageWidth,_imageHeight,keypoints);
 
-    //print("${Constants.webPath}users/$userId/exercises/$exerciseId");
-    return http.post("${Constants.gwPath}similarities/video",
+    return http.post("${Constants.webPath}workouts/${widget.workout.id}/exerciseSets/${widget.exercise.id}:addHistory",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
       'authorization' : prefs.getString("token")
@@ -182,37 +180,25 @@ class _CameraPageState extends State<CameraPage>
       recordCounter++;
       http.Response response = await getDistanceOfCurrent(resultsList);
       try{
-        print("current set:" + currentSet.toString());
-        print("set count:" + widget.exercise.exerciseDetails.setCount.toString());
-        printWrapped(response.body);
-        dynamic matches;
-        
-        matches = jsonDecode(response.body)["data"]["match"];
-
-        bool isCorrect = false;
         int count = 0;
         int repeat = 0;
 
-        for(var match in matches)
-        {
-          isCorrect = match["isCorrect"];
-          count = match["count"];
-          repeat = match["repeat"];
-        }
 
+        count = jsonDecode(response.body)["count"];
+        bool isCorrect = widget.exercise.repeat <= count;
 
         String title;
-        if(isCorrect) title = "Congratulations"; else title = "You Failed";
+        if(isCorrect) title = "Nice Work!"; else title = "You Failed";
         
 
         showDialog(context: context,
                     builder: (BuildContext context){
                     return CustomDialogBox(
                       title: title,
-                      descriptions: "You have made $count repeats",
+                      descriptions: "You have made $count/${widget.exercise.repeat} repeats",
                       text1: "Try again",
-                      text2: currentSet == widget.exercise.exerciseDetails.setCount ? "Finish Move" : "Next Set",
-                      exitFunction: currentSet == widget.exercise.exerciseDetails.setCount ? nextExercise : nextSet,
+                      text2: currentSet == widget.exercise.setCount ? "Finish Move" : "Next Set",
+                      exitFunction: currentSet == widget.exercise.setCount ? nextExercise : nextSet,
                     );
                     }
                   );
@@ -234,6 +220,20 @@ class _CameraPageState extends State<CameraPage>
       }
       resultsList.clear();
     }
+  }
+
+
+
+  void startRecording()
+  {
+    isRecording = true;
+  }
+
+  void stopRecording()
+  {
+    isRecording = false;
+    onRecord(context);
+
   }
 
 
@@ -268,7 +268,7 @@ class _CameraPageState extends State<CameraPage>
           Stack(
               children: [
                 cameraInput,
-                //savePoints,
+                SpeechRecog(startRecording, stopRecording),
                 BndBox(
                     _recognitions == null ? [] : _recognitions,
                     math.max(_imageHeight, _imageWidth),
@@ -292,11 +292,7 @@ class _CameraPageState extends State<CameraPage>
                           ),
                       child: Text(isRecording ? "Finish" : "Start", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
                       
-                      onPressed:() => setState(() { isRecording = !isRecording;
-                        if(!isRecording){
-                          onRecord(context);
-                        }
-                      })
+                      onPressed:() => setState(() => isRecording ? stopRecording() : startRecording())
                     ),
                   ],
                   ),

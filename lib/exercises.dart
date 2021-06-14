@@ -3,7 +3,6 @@ import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
 import 'package:flutter_realtime_detection/models/exerciseModel.dart';
 import 'package:flutter_realtime_detection/models.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -14,12 +13,14 @@ import 'exerciseCards.dart';
 import 'package:animations/animations.dart';
 
 import 'models/user.dart';
+import 'models/workout.dart';
 
 
 class ExercisesPage extends StatefulWidget
 {
   final User visitedUser;
-  ExercisesPage(this.visitedUser);
+  final Workout visitedWorkout;
+  ExercisesPage(this.visitedUser,this.visitedWorkout);
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
@@ -37,8 +38,6 @@ class ExersisesState extends State<ExercisesPage>
 
   ScrollController controller = ScrollController();
   double topContainer = 0;
-
-  SavePoints savePoints;
 
   String currentExcersise = "";
   String model = posenet;
@@ -76,7 +75,7 @@ class ExersisesState extends State<ExercisesPage>
   {
     var response = await getExercises();
     
-    exercisesDataRaw = jsonDecode(response.body)["data"] as List;
+    exercisesDataRaw = jsonDecode(response.body) as List;
     exercisesDataRaw.forEach((element) {
       var exer  = Exercise.fromJson(element);
       exercises.add(exer);
@@ -124,7 +123,7 @@ class ExersisesState extends State<ExercisesPage>
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
-                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                Image.network(post.imageUrl,
                   errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
                     return Image.asset(
                     "assets/logo.png",
@@ -147,12 +146,9 @@ class ExersisesState extends State<ExercisesPage>
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-    print(res);
   }
 
-  onSelect(excersise,index) {
-    curExercise = excersise;
-  }
+
 
 
   @override
@@ -188,8 +184,8 @@ class ExersisesState extends State<ExercisesPage>
                           return GestureDetector(
                           onTap : () {  
                             setState(() {
+                              curExercise = exercises[index];
                               openContainer();
-                              onSelect(exercises[index], index);
                             });
                             },
                             child: Opacity(
@@ -210,7 +206,7 @@ class ExersisesState extends State<ExercisesPage>
                         },
                           openBuilder: (_, closeContainer)
                           {
-                              return ExerciseCard(CardType.exercise,curExercise,closeContainer,widget.visitedUser);
+                              return ExerciseCard(CardType.exercise,curExercise,closeContainer,widget.visitedUser,widget.visitedWorkout);
                           },
                         );
                       })),

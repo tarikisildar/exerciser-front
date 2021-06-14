@@ -1,35 +1,31 @@
 
-import 'dart:io';
-
-import 'package:date_format/date_format.dart';
-import 'package:flutter_realtime_detection/enums/ExerciseHistoryType.dart';
-
-import 'exercisedetails.dart';
 
 
 class Exercise
 {
-  DateTime creationDate;
   final String id;
   final String name;
   final String difficulty;
-  final double p;
+  final String imageUrl;
+  final String videoUrl;
 
-  Exercise(this.id,this.name,this.difficulty,this.p);
+  Exercise(this.id,this.name,this.difficulty,this.imageUrl,this.videoUrl);
 
   Exercise.fromJson(Map<String, dynamic> json)
-    : creationDate = HttpDate.parse(json['creationDate']),
-      id = json['_id'],
+    : 
+      id = json['id'],
       name = json['name'],
       difficulty = json['difficulty'],
-      p = json['p'];
+      imageUrl = json['imageUrl'],
+      videoUrl = json['videoUrl'];
 
   Map<String, dynamic> toJson() => 
   {
-    '_id' : id,
+    'id' : id,
     'name' : name,
     'difficulty' : difficulty,
-    'p' : p
+    'videoUrl' : videoUrl,
+    'imageUrl' : imageUrl
   };
 
 }

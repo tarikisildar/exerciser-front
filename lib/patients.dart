@@ -1,14 +1,14 @@
 
-import 'dart:convert';
 
-import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_realtime_detection/enums/userRole.dart';
+import 'package:flutter_realtime_detection/userWorkoutPlans.dart';
+import 'package:flutter_realtime_detection/workoutDashboard.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants.dart';
-import 'models/exerciseModel.dart';
 import 'home.dart';
 import 'models/user.dart';
 
@@ -52,9 +52,10 @@ class PatientsState extends State<PatientsPage>
     
     //var patientsDataRaw = jsonDecode(response.body)["data"] as List;
     
-    User user1 = User("606a0108a66a3b2a24ab6d1c","Tarik@bisey.com");
-    User user2 = User("606892f2a66a3b2a24ab6ced", "Fatih@bisey.com");
-    var patientsDataRaw = [user1,user2];
+    User user1 = User("60c601f2388c23614c780869","test@user.com",[UserRole.Patient]);
+    User user2 = User("606892f2a66a3b2a24ab6ced", "Fatih@bisey.com",[UserRole.Patient]);
+    User user3 = User("606892f2a66a3b2a24ab6ced", "Tarik@bisey.com",[UserRole.Patient]);
+    var patientsDataRaw = [user1,user2,user3];
     patientsDataRaw.forEach((element) {
       //var exer  = User.fromJson(element);
       patients.add(element);
@@ -140,7 +141,7 @@ class PatientsState extends State<PatientsPage>
                       onTap : () {  
                         setState(() {
                           Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => HomePage(patients[index])
+                                builder: (context) => WorkoutDashBoard(patients[index])
                               ));
                         });
                         },

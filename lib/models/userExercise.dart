@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:date_format/date_format.dart';
 
 import 'exerciseModel.dart';
-import 'exercisedetails.dart';
+import 'exerciseDetails.dart';
 import 'history.dart';
 
 class UserExercise
@@ -20,10 +20,10 @@ class UserExercise
   UserExercise(this.startDate, this.endDate, this.asignerId,this.userId, this.exerciseDetails, this.recurrentDays);
 
   UserExercise.fromJson(Map<String, dynamic> json)
-    : creationDate = HttpDate.parse(json['creationDate']),
-      id = json['_id'],
-      startDate = HttpDate.parse(json['startDate']),
-      endDate = HttpDate.parse(json['endDate']),
+    : creationDate = DateTime.parse(json['creationDate']),
+      id = json['id'],
+      startDate = DateTime.parse(json['startDate']),
+      endDate = DateTime.parse(json['endDate']),
       userId = json['userId'],
       asignerId = json['asignerId'],
       exerciseDetails = ExerciseDetails.fromJson(json['exerciseDetails']),

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:animations/animations.dart';
-import 'package:date_format/date_format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/constants.dart';
@@ -13,10 +12,12 @@ import 'package:tflite/tflite.dart';
 import 'enums/cardType.dart';
 import 'exerciseCardPlanPage.dart';
 import 'makeExercise.dart';
-import 'models/clientExercise.dart';
+import 'models/filteredExercise.dart';
+import 'models/exerciseDetails.dart';
 import 'models/history.dart';
 import 'models/user.dart';
 import 'models/userExercise.dart';
+import 'models/workout.dart';
 
 class WorkoutPlanPage extends StatefulWidget 
 {
@@ -25,7 +26,8 @@ class WorkoutPlanPage extends StatefulWidget
   final Function selectDay;
   final DateTime startDay;
   final User visitedUser;
-  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay,this.visitedUser);
+  final Workout visitedWorkout;
+  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay,this.visitedUser,this.visitedWorkout);
   @override
   State<StatefulWidget> createState() => new WorkoutPlanState();
 }
@@ -48,17 +50,17 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   List<DateTime> startingEndingDates = new List(2);
   List<ClientExercise> responseList = new List();
 
-  UserExercise currentExercise;
-  List<UserExercise> userExercises = [];
-  List<UserExercise> userExercisesToday = [];
-  int exerciseToMakeIx = 0;
+  ExerciseDetails currentExercise;
+  List<ExerciseDetails> userExercises = [];
+  List<ExerciseDetails> userExercisesToday = [];
   DateTime selectedDate = DateTime.now();
 
 
  @override
   void initState(){
       super.initState();
-      getExerciseData(DateTime.now().subtract(Duration(days: 7)),DateTime.now().add(Duration(days: 7)));
+      if(widget.visitedWorkout != null)
+        getExerciseData(DateTime.now().subtract(Duration(days: 7)),DateTime.now().add(Duration(days: 7)));
       
       calendarController = CalendarController();
       //calendarController.setCalendarFormat(CalendarFormat.week);
@@ -85,10 +87,6 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         DateTime todayFirst = new DateTime(now.year, now.month, now.day);
         DateTime todayLast =  new DateTime(now.year, now.month, now.day,23,59,59);
         var histories = findHistories(userExercisesToday[i], todayFirst, todayLast);
-        print(histories);
-        if(histories.isNotEmpty){
-          exerciseToMakeIx++;
-        }
       }
 
 
@@ -133,18 +131,14 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-    print(res);
   }
 
-  nextExercise() => {
-    exerciseToMakeIx++
-  };
 
   onSelect() {
 
     loadModel();
     //DateTime.parse(DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercisesToday[exerciseToMakeIx],nextExercise)));
+    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercisesToday[exerciseToMakeIx],nextExercise,widget.visitedWorkout)));
     
   }
 
@@ -156,30 +150,29 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     super.dispose();
   }
 
-  List<History> findHistories(UserExercise userExercise, DateTime first, DateTime last)
+  List<History> findHistories(ExerciseDetails userExercise, DateTime first, DateTime last)
     {
-      var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
-      var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
+      var startingDate = widget.visitedWorkout.startingDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? widget.visitedWorkout.startingDate : first;
+      var endingDate = widget.visitedWorkout.endingDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : widget.visitedWorkout.endingDate;
+     
 
-      
       List<History> recurrentDates = [];
       for (int i = 0; i <userExercise.history.length; i++){
-         
+        
         var history = userExercise.history[i];
-        if(history.creationDate.isAfter(startingDate) && history.creationDate.isBefore(endingDate)){
+        if(history.creationDate.isAfter(startingDate.subtract(startingDate.timeZoneOffset)) && history.creationDate.isBefore(endingDate.toUtc())){
           recurrentDates.add(history);
         }
       }
-      print(recurrentDates.length);
       return recurrentDates; 
 
     }
 
-  List<DateTime> findRepetitions(UserExercise userExercise, DateTime first, DateTime last)
+  List<DateTime> findRepetitions(ExerciseDetails userExercise, DateTime first, DateTime last)
     {
 
-      var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
-      var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
+      var startingDate = widget.visitedWorkout.startingDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? widget.visitedWorkout.startingDate : first;
+      var endingDate = widget.visitedWorkout.endingDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : widget.visitedWorkout.endingDate;
       var currentDate = startingDate;
 
       List<DateTime> recurrentDates = [];
@@ -196,10 +189,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     }
 
 
-  Future<http.Response> getExercises(DateTime first, DateTime last)
+  Future<http.Response> getExercises()
   async {
-    String dateFirst = formatDate(first.subtract(Duration(hours: 12)),[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
-    String dateLast = formatDate(last.add(Duration(hours: 12)),[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var headers = {
@@ -207,8 +198,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var url = Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercise-by-date?startDate=$dateFirst&endDate=$dateLast";
-    print(url);
+    var url = Constants.webPath + "workouts/" + widget.visitedWorkout.id+ "/exerciseSets";
     //-by-date?startDate=$dateFirst&endDate=$dateLast
     return http.get(url, headers: headers);
   }
@@ -216,33 +206,31 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   void getExerciseData(DateTime first, DateTime last) async
   {
     responseList.clear();
-    var getData = (await getExercises(first, last)).body;
+    var getData = (await getExercises()).body;
 
-    print(getData);
-    var exercisesRaw = jsonDecode(getData)["data"] as List;
+    var exercisesRaw = jsonDecode(getData) as List;
     userExercises.clear();
     userExercisesToday.clear();
     for(int i = 0; i < exercisesRaw.length; i++)
     {
-      userExercises.add(UserExercise.fromJson(exercisesRaw[i]));
+      userExercises.add(ExerciseDetails.fromJson(exercisesRaw[i]));
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
       DateTime todayFirst = new DateTime(first.year, first.month, first.day);
       DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
       var dates = findRepetitions(userExercises[i], todayFirst, todayLast);
-      print(dates);
       for(int j = 0; j < dates.length; j++)
       {
-        var curExercise = userExercises[i].exerciseDetails.exercise;
-        var exerciseDetails = userExercises[i].exerciseDetails;
+        var curExercise = userExercises[i].exercise;
+        var exerciseDetails = userExercises[i];
         print("setcount: ${exerciseDetails.setCount}");
 
         if(isSameDay(DateTime.now(), dates[j])){
           userExercisesToday.add(userExercises[i]);
         }
 
-        responseList.add(ClientExercise(curExercise.name, curExercise.difficulty, exerciseDetails.repeat, exerciseDetails.setCount, dates[j]));
+        responseList.add(ClientExercise(exerciseDetails, dates[j]));
       }
     }
 
@@ -251,7 +239,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     List<Widget> listItems = [];
     int index = 0;
     responseList.forEach((post) {
-      bool disabled = index < exerciseToMakeIx && isSameDay(post.date,DateTime.now());
+      //bool disabled = index < exerciseToMakeIx && isSameDay(post.date,DateTime.now());
+      bool disabled = false;
       listItems.add(
         exerciseItem(post,disabled)
       );
@@ -277,7 +266,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                Image.network(post.exerciseDetails.exercise.imageUrl,
                   errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
                     return Image.asset(
                     "assets/logo.png",
@@ -290,7 +279,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        post.name,
+                        post.exerciseDetails.exercise.name,
                         style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -299,7 +288,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                         height: 10,
                       ),
                       Text(
-                        "${post.setCount} Sets \n${post.repCount} Repeats",
+                        "${post.exerciseDetails.setCount} Sets \n${post.exerciseDetails.repeat} Repeats",
                         style: const TextStyle(fontSize: 23, color: Colors.black, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.fade,
                       ),
@@ -386,7 +375,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         setState(() {
             startingEndingDates[0] = first;
           startingEndingDates[1] = last;
-          getExerciseData(first, last);
+          if(widget.visitedWorkout != null)
+            getExerciseData(first, last);
           
         });
         
@@ -502,7 +492,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                     onTap : () {  
                         setState(() {
                           openContainer();
-                          currentExercise = userExercises[index+1];
+                          currentExercise = userExercises[index];
                         });
                       },
                       child: Opacity(
@@ -525,7 +515,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                   );
             }, openBuilder: (_, closeContainer)
             {
-                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer,canStartTheProgram());
+                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer,canStartTheProgram(),widget.visitedWorkout);
             });
           }
         
