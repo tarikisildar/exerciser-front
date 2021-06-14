@@ -1,18 +1,27 @@
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter_realtime_detection/exercises.dart';
-import 'package:flutter_realtime_detection/history.dart';
 import 'package:flutter_realtime_detection/historyPage.dart';
+import 'package:flutter_realtime_detection/login.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
+
+
+import 'constants.dart';
+import 'models/user.dart';
+import 'models/workout.dart';
 
 
 class HomePage extends StatefulWidget 
 {
-
-  HomePage();
+  final User visitedUser;
+  final Workout visitedWorkout;
+  HomePage(this.visitedUser,this.visitedWorkout);
 
   @override
   _HomePageState createState() => new _HomePageState();
@@ -24,7 +33,31 @@ class _HomePageState extends State<HomePage>
   double screenHeight;
   double screenWidth;
   String currentPageName = "My Workout Plan";
-  Widget currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
+  Widget currentPage; 
+
+  User user;
+  String name;
+
+  void setUser() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var response = await http.get("${Constants.webPath}users/users/me",
+    headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+              'authorization' : prefs.getString("token")
+            });
+    user = User.fromJson(jsonDecode(response.body));
+    name = (widget.visitedUser.userName == user.userName || widget.visitedUser.userName == "")  ? "My" : widget.visitedUser.userName.split("@")[0] + "'s";
+    currentPageName = "$name Workout Plan";
+  }
+
+  @override
+  void initState()
+  {
+    super.initState();
+    currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now(),widget.visitedUser,widget.visitedWorkout);
+    setUser();
+  }
 
 
   final Duration duration = const Duration(milliseconds: 100);
@@ -100,7 +133,7 @@ class _HomePageState extends State<HomePage>
                       icon: Icon(Icons.person_outlined, color: Colors.black),
                       onPressed: () {
                         setState(() {
-                          currentPageName = "My Profile";
+                          currentPageName = "$name Profile";
                           isSideBarActive = false;
                         });
                         
@@ -111,9 +144,9 @@ class _HomePageState extends State<HomePage>
                       icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
                       onPressed: () {
                         setState(() {
-                          currentPageName = "My Workout Plan";
+                          currentPageName = "$name Workout Plan";
                           isSideBarActive = false;
-                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now());
+                          currentPage = WorkoutPlanPage(true,CalendarFormat.week,(){},DateTime.now(),widget.visitedUser,widget.visitedWorkout);
                         });
                       }
                     ),
@@ -122,9 +155,9 @@ class _HomePageState extends State<HomePage>
                       icon: Icon(Icons.history_outlined, color: Colors.black),
                       onPressed: () {
                         setState(() {
-                          currentPageName = "My Workout History";
+                          currentPageName = "$name Workout History";
                           isSideBarActive = false;
-                          currentPage = HistoryPage(true,CalendarFormat.week,(){},DateTime.utc(2020));
+                          currentPage = HistoryPage(true,CalendarFormat.week,(){},DateTime.utc(2020),widget.visitedUser,widget.visitedWorkout);
                         });
                         
                       }
@@ -137,16 +170,33 @@ class _HomePageState extends State<HomePage>
                         setState(() {
                           currentPageName = "Explore";
                           isSideBarActive = false;
-                          currentPage = ExercisesPage();
+                          currentPage = ExercisesPage(widget.visitedUser,widget.visitedWorkout);
                         });
                         
                       }
                     ),
+                    Spacer(),
+                    IconButton(icon: Icon(Icons.subdirectory_arrow_left, color: Colors.black), 
+                      onPressed: () {setState(() {
+                        goBack();
+                      });}
+                    ),
+
                   ]
                 )
             )
           )
       );
+    }
+    void goBack(){
+      if(Navigator.of(context).canPop())
+      {
+        Navigator.of(context).pop();
+      }
+      else
+      {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
+      }
     }
 }
 

@@ -1,28 +1,36 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:flutter_realtime_detection/main.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
+import 'package:flutter_realtime_detection/constants.dart';
+import 'package:flutter_realtime_detection/models/exerciseDetails.dart';
+import 'package:flutter_realtime_detection/speechRecognititon.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'bndbox.dart';
 import 'camera.dart';
 import 'dart:math' as math;
 
 import 'customDialogBox.dart';
-import 'exerciseModel.dart';
+import 'models/point.dart';
+import 'models/userExercise.dart';
+import 'models/videoSimilarityRequest.dart';
+import 'models/workout.dart';
 
 
 
 
 class CameraPage extends StatefulWidget
 {
-  final List<UserExercise> exercises;
+  final ExerciseDetails exercise;
+  final Workout workout;
+  final Function nextExercise;
 
 
-  CameraPage(this.exercises);
+  CameraPage(this.exercise,this.nextExercise,this.workout);
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -31,7 +39,6 @@ class CameraPage extends StatefulWidget
 
 class _CameraPageState extends State<CameraPage>
 {
-  //SavePoints savePoints;
   List<dynamic> _recognitions;
   bool isDebug = false;
 
@@ -41,14 +48,35 @@ class _CameraPageState extends State<CameraPage>
 
   int _imageHeight = 0;
   int _imageWidth = 0;
-  int exerciseIx = 0;
-  int currentSet = 0;
+  int currentSet = 1;
+
+  int cameraIx = 0;
+  Input cameraInput;
+
+
+    @override
+  void initState() 
+  {
+    super.initState();
+    cameraInput = Input(
+                  checkRecording,
+                  setRecognitions,
+                );
+  }
+
 
   setRecognitions(recognitions, imageHeight, imageWidth) {
     setState(() {
       _recognitions = recognitions;
       _imageHeight = imageHeight;
       _imageWidth = imageWidth;
+    });
+  }
+
+  void changeCam(){
+    setState(() {
+      cameraIx = cameraIx == 0 ? 1: 0;
+      cameraInput.changeCamera();
     });
   }
 
@@ -61,9 +89,7 @@ class _CameraPageState extends State<CameraPage>
     onRecord(context);
   }
 
-  setSavePoints(SavePoints svPoints){
-    //savePoints = svPoints;
-  }
+
   
   
   exitToMenu() => 
@@ -72,7 +98,7 @@ class _CameraPageState extends State<CameraPage>
   };
 
   nextExercise() =>{
-    exerciseIx++,
+    //widget.nextExercise(),
     exitToMenu()
   };
 
@@ -80,18 +106,57 @@ class _CameraPageState extends State<CameraPage>
     currentSet++
   };
 
-  Future<http.Response> getDistance(List<List<Point>> resultsList)
+  void printWrapped(String text) {
+    final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((match) => print(match.group(0)));
+  }
+
+  Future get _localPath async {
+    final externalDirectory = await getExternalStorageDirectory();
+
+    return externalDirectory.path;
+  }
+  
+  Future _localFile(filename) async {
+    final path = await _localPath;
+
+    return File('$path/' + filename);
+  }
+
+
+  Future _writeToFile(String text,String filename) async {
+    
+    final file = await _localFile(filename);
+    await file.writeAsString('$text');
+  }
+
+  Future<http.Response> getDistance(List<List<Point>> resultsList) async
   {
-    UserExercise curEx = widget.exercises[exerciseIx];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String userId = prefs.getString("userId");
+    
+    ExerciseDetails curEx = widget.exercise;
 
-    var name = curEx.exerciseDetails.exercise.name;
-    var repeat = curEx.exerciseDetails.repeat;
+    List<KeyPoints> keypoints = [];
+    for(int i = 0; i < resultsList.length; i++){
+      keypoints.add(KeyPoints(resultsList[i]));
+    }
 
-    return http.post("http://157.230.108.121:8080/similarity-single/$name?repeat=$repeat&p=0.3",
+    KeyPointSequence sequence =  KeyPointSequence(_imageWidth, _imageHeight, keypoints);
+
+    if(Constants.isDebug)
+      _writeToFile(jsonEncode(sequence), recordCounter.toString()+ ".json");
+
+
+    String exerciseName = curEx.exercise.name;
+    VideoSimilarityRequest videoSim = VideoSimilarityRequest(_imageWidth,_imageHeight,keypoints);
+
+    return http.post("${Constants.webPath}workouts/${widget.workout.id}/exerciseSets/${widget.exercise.id}:addHistory",
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
+      'authorization' : prefs.getString("token")
     },
-    body: jsonEncode(resultsList)
+    body: jsonEncode(videoSim)
     );
   }
 
@@ -100,32 +165,47 @@ class _CameraPageState extends State<CameraPage>
   {
       return getDistance(resultsList);
   }
-  @override
-  void initState() 
-  {
-    //setSavePoints(SavePoints());
-    super.initState();
-  }
 
-    
-  
 
   void addResults(List<Point> frameResults)
   {
-
     resultsList.add(frameResults);
   }
 
-  
 
   void onRecord(BuildContext context) async
   {
-    print(isRecording);
     if(!isRecording)
     {
       recordCounter++;
       http.Response response = await getDistanceOfCurrent(resultsList);
-      if(response.statusCode != 200){
+      try{
+        int count = 0;
+        int repeat = 0;
+
+
+        count = jsonDecode(response.body)["count"];
+        bool isCorrect = widget.exercise.repeat <= count;
+
+        String title;
+        if(isCorrect) title = "Nice Work!"; else title = "You Failed";
+        
+
+        showDialog(context: context,
+                    builder: (BuildContext context){
+                    return CustomDialogBox(
+                      title: title,
+                      descriptions: "You have made $count/${widget.exercise.repeat} repeats",
+                      text1: "Try again",
+                      text2: currentSet == widget.exercise.setCount ? "Finish Move" : "Next Set",
+                      exitFunction: currentSet == widget.exercise.setCount ? nextExercise : nextSet,
+                    );
+                    }
+                  );
+      }
+      catch(e)
+      {
+        print(e);
         showDialog(context: context,
                   builder: (BuildContext context){
                   return CustomDialogBox(
@@ -134,52 +214,26 @@ class _CameraPageState extends State<CameraPage>
                     text1: "Try again",
                     text2: "Main Menu",
                     exitFunction: exitToMenu
-                    
                   );
                   }
                 );
-            
       }
-      else
-      {
-        print(response.body);
-        var matches = jsonDecode(response.body)["match"];
-
-        bool isCorrect = false;
-        int count = 0;
-        int repeat = 0;
-
-        for(var match in matches)
-        {
-          isCorrect = match["isCorrect"];
-          count = match["count"];
-          repeat = match["repeat"];
-        }
-
-        //score = jsonDecode(response.body)["match"][0]["distance"];
-        //var scoreLis = jsonDecode(response.body)["match"][0]["distance"];
-        //String scoreSt = scoreLis.toString();
-
-        String title;
-        if(isCorrect) title = "Congratulations"; else title = "You Failed";
-        
-
-        showDialog(context: context,
-                    builder: (BuildContext context){
-                    return CustomDialogBox(
-                      title: title,
-                      descriptions: "You have made $count repeats",
-                      text1: "Try again",
-                      text2: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? "Finish Move" : "Next Set",
-                      exitFunction: currentSet == widget.exercises[exerciseIx].exerciseDetails.setCount ? nextExercise : nextSet,
-                    );
-                    }
-                  );
-      }
-      //_writeToFile(jsonEncode(resultsList), recordCounter.toString()+ ".json");
-      //_writeToFile(response.body, recordCounter.toString()+ ".txt");
       resultsList.clear();
     }
+  }
+
+
+
+  void startRecording()
+  {
+    isRecording = true;
+  }
+
+  void stopRecording()
+  {
+    isRecording = false;
+    onRecord(context);
+
   }
 
 
@@ -201,16 +255,20 @@ class _CameraPageState extends State<CameraPage>
                 Navigator.pop(context)
               },
             ),
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.flip_camera_android, color: Colors.white),
+                onPressed: () {
+                    changeCam();
+                },
+              ),
+            ],
         ),
         body: 
           Stack(
               children: [
-                Input(
-                  checkRecording,
-                  setRecognitions,
-                  posenetOver
-                ),
-                //savePoints,
+                cameraInput,
+                SpeechRecog(startRecording, stopRecording),
                 BndBox(
                     _recognitions == null ? [] : _recognitions,
                     math.max(_imageHeight, _imageWidth),
@@ -234,7 +292,7 @@ class _CameraPageState extends State<CameraPage>
                           ),
                       child: Text(isRecording ? "Finish" : "Start", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
                       
-                      onPressed:() => setState(() { isRecording = !isRecording;})
+                      onPressed:() => setState(() => isRecording ? stopRecording() : startRecording())
                     ),
                   ],
                   ),

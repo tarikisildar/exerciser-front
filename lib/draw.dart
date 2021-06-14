@@ -12,10 +12,10 @@ class DrawLine extends CustomPainter
   void paint(Canvas canvas, Size size) {
     
     Paint line = new Paint()
-      ..color = Colors.blue
+      ..color = Colors.red
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
-      ..strokeWidth = 2;
+      ..strokeWidth = 6;
 
       
       canvas.drawLine(Offset(points[0], points[1]), Offset(points[2], points[3]), line);

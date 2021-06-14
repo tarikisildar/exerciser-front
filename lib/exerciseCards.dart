@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:better_player/better_player.dart';
 import 'package:date_format/date_format.dart';
@@ -7,7 +8,8 @@ import 'package:day_selector/day_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
-import 'package:flutter_realtime_detection/exerciseModel.dart';
+import 'package:flutter_realtime_detection/models/exerciseModel.dart';
+import 'package:flutter_realtime_detection/models/workout.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -15,14 +17,19 @@ import 'package:weekday_selector/weekday_selector.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
+import 'models/exerciseDetails.dart';
+import 'models/user.dart';
+import 'models/userExercise.dart';
 
 
 class ExerciseCard extends StatefulWidget{
+  final User visitedUser;
+  final Workout visitedWorkout;
   final CardType cardType;
   final Exercise exercise;
   final VoidCallback closeContainer;
 
-  ExerciseCard(this.cardType,this.exercise,this.closeContainer);
+  ExerciseCard(this.cardType,this.exercise,this.closeContainer,this.visitedUser,this.visitedWorkout);
   @override
   State<StatefulWidget> createState() => new ExerciseCardState();
 
@@ -49,7 +56,7 @@ class ExerciseCardState extends State<ExerciseCard>
     void initState(){
       super.initState();
       configureVideo();
-      calendarStates.add(setStartingDateState());
+      calendarStates.add(setDays());
       repeatCount = 5;
       setCount = 1;
       selectedStartingDay = DateTime.now();
@@ -57,6 +64,9 @@ class ExerciseCardState extends State<ExerciseCard>
 
     void configureVideo()
     {
+      //"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+      String lowerName = widget.exercise.name.toLowerCase();
+      lowerName = lowerName.replaceAll(' ', '');
       BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
       aspectRatio: 16 / 9,
@@ -64,7 +74,7 @@ class ExerciseCardState extends State<ExerciseCard>
       );
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.NETWORK,
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        widget.exercise.videoUrl,
         cacheConfiguration: BetterPlayerCacheConfiguration(useCache: true),
       );
       _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
@@ -84,15 +94,16 @@ class ExerciseCardState extends State<ExerciseCard>
   }
   Widget card(){
     final deviceSize = MediaQuery.of(context).size;
-    final cardWidth = min(deviceSize.width * 0.75, 360.0);
+    final cardWidth = deviceSize.width * 0.75;
     return Container(
           height: deviceSize.height * 0.9,
+          width: deviceSize.width * 0.9,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 10.0),
           ]),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -139,7 +150,7 @@ class ExerciseCardState extends State<ExerciseCard>
                       children: <Widget>
                       [
                       SizedBox(
-                        width: 160,
+                        width: cardWidth/2-5,
                         child:  RaisedButton(
                           onPressed: () {widget.closeContainer();},
                           color: Colors.white,
@@ -147,7 +158,7 @@ class ExerciseCardState extends State<ExerciseCard>
                             borderRadius: BorderRadius.circular(18.0),
                             side: BorderSide(color: Colors.black)
                           ),
-                          child: Text("Back", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
+                          child: Text("Back", style : TextStyle(fontSize: 13, color: Colors.black, fontWeight: FontWeight.bold)
                           ),
                         ),
                       ),
@@ -156,7 +167,7 @@ class ExerciseCardState extends State<ExerciseCard>
                         width: 10,
                       ),
                       SizedBox(
-                        width: 160,
+                        width: cardWidth/2-5,
                         child:  RaisedButton(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
@@ -169,7 +180,7 @@ class ExerciseCardState extends State<ExerciseCard>
                           },
                           color: Colors.black,
                           
-                          child: Text("Add To Schedule", style : TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)
+                          child: Text("Add To Schedule",textAlign: TextAlign.center, style : TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold)
                           ),
                         ),
                       ),
@@ -281,6 +292,8 @@ class ExerciseCardState extends State<ExerciseCard>
   Widget addToPlan()
   { 
     final deviceSize = MediaQuery.of(context).size;
+      final cardWidth = deviceSize.width * 0.75;
+
     return Container(
       height: deviceSize.height * 0.9,
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -309,14 +322,14 @@ class ExerciseCardState extends State<ExerciseCard>
                 SizedBox(
                   height: 20,
                 ),
-                calendarStates.length > 2 ? Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
                     
                       repCountButton(),
                       setCountButton()
                     ],      
-                  ) : SizedBox(width:1),
+                  ) ,
             
                 Expanded(
                   child:SizedBox(
@@ -329,7 +342,7 @@ class ExerciseCardState extends State<ExerciseCard>
                   children: <Widget>
                   [
                   SizedBox(
-                    width: 160,
+                    width: cardWidth/2-5,
                     child:  RaisedButton(
                       onPressed: () {setState(() {
                           configureVideo();
@@ -346,7 +359,7 @@ class ExerciseCardState extends State<ExerciseCard>
                         borderRadius: BorderRadius.circular(18.0),
                         side: BorderSide(color: Colors.black)
                       ),
-                      child: Text("Back", style : TextStyle(fontSize: 17, color: Colors.black, fontWeight: FontWeight.bold)
+                      child: Text("Back", style : TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ),
@@ -355,7 +368,7 @@ class ExerciseCardState extends State<ExerciseCard>
                     width: 10,
                   ),
                   SizedBox(
-                    width: 160,
+                    width: cardWidth/2-5,
                     child:  RaisedButton(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.0),
@@ -363,25 +376,15 @@ class ExerciseCardState extends State<ExerciseCard>
                       ),
                       onPressed: () {
                         setState(() {
-                          switch(calendarStates.length){
-                            case 1:
-                              calendarStates.add(setEndingDateState());
-                              break;
-                            case 2:
-                              calendarStates.add(setDays());
-                              break;
-                            case 3:
                               addToThePlan();
                               
                               widget.closeContainer();
-                              break;
-                          }
                         });
                         
                       },
                       color: Colors.black,
                       
-                      child: Text(calendarStates.length < 3 ? "Next" : "Add To Plan" , style : TextStyle(fontSize: 17, color: Colors.white, fontWeight: FontWeight.bold)
+                      child: Text("Add To Plan" , style : TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ),
@@ -400,66 +403,29 @@ class ExerciseCardState extends State<ExerciseCard>
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
     //Exercise exerciseModel = Exercise(widget.exercise.exercise.id,widget.exercise.exercise.name,widget.exercise.exercise.difficulty,widget.exercise.exercise.);
-    ExerciseDetails exerciseDetails = ExerciseDetails(widget.exercise,repeatCount,setCount);
 
-    List<Map<String,dynamic>> days = [];
+    List<int> days = [];
     for(int i = 0; i < values.length; i++){
       if(values[i]){
-        var map = {"id" : i};
-        days.add(map);
+        var map = { "id" : (i-1)%7};
+        days.add((i-1)%7);
       }
     }
+    ExerciseDetails exerciseDetails = ExerciseDetails(widget.exercise,repeatCount,setCount,days);
 
-    UserExercise userExercise = UserExercise(selectedStartingDay,selectedDay,prefs.getString("userId"),prefs.getString("userId"),exerciseDetails,days);
-    print(userExercise.recurrentDays);
     var headers = {
               'Content-type': 'application/json; charset=UTF-8',
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var request = http.post(Constants.webPath + "users/" + prefs.getString("userId")+ "/exercises/",
+    var request = http.post(Constants.webPath + "workouts/" + widget.visitedWorkout.id+ ":addExerciseSet",
     headers: headers,
-    body: jsonEncode(userExercise.toJson()));
+    body: jsonEncode(exerciseDetails.toJson()));
 
-    print(jsonEncode(userExercise.toJson()));
-    print((await request).body);
   }
 
 
 
-
-
-  Widget setStartingDateState()
-  {
-    return Column(
-      children: <Widget>[
-                Text(
-                      "Select The Starting Date",
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                SizedBox(
-                  height: 20,
-                ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectStartingDay,DateTime.now()),
-      ]
-    );
-  }
-
-  Widget setEndingDateState()
-  {
-    return Column(
-      children: <Widget>[
-                Text(
-                      "Select The Ending Date",
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                SizedBox(
-                  height: 20,
-                ),
-                WorkoutPlanPage(false,CalendarFormat.month,selectDay,selectedStartingDay),
-      ]
-    );
-  }
   Widget setDays(){
     return Column(
       children: <Widget>[
@@ -474,7 +440,8 @@ class ExerciseCardState extends State<ExerciseCard>
                   values: values,
                   onChanged: (int day) {
                     setState(() {
-                      final index = day % 7;
+                      int index = day % 7;
+          
                       values[index] = !values[index];
                     });
                   },

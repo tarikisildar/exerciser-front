@@ -1,12 +1,9 @@
 import 'dart:convert';
 
 import 'package:animations/animations.dart';
-import 'package:date_format/date_format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/constants.dart';
-import 'package:flutter_realtime_detection/exerciseModel.dart';
-import 'package:flutter_realtime_detection/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
@@ -15,6 +12,12 @@ import 'package:tflite/tflite.dart';
 import 'enums/cardType.dart';
 import 'exerciseCardPlanPage.dart';
 import 'makeExercise.dart';
+import 'models/filteredExercise.dart';
+import 'models/exerciseDetails.dart';
+import 'models/history.dart';
+import 'models/user.dart';
+import 'models/userExercise.dart';
+import 'models/workout.dart';
 
 class WorkoutPlanPage extends StatefulWidget 
 {
@@ -22,7 +25,9 @@ class WorkoutPlanPage extends StatefulWidget
   final CalendarFormat calendarFormat;
   final Function selectDay;
   final DateTime startDay;
-  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay);
+  final User visitedUser;
+  final Workout visitedWorkout;
+  WorkoutPlanPage(this.isEventListActive,this.calendarFormat,this.selectDay,this.startDay,this.visitedUser,this.visitedWorkout);
   @override
   State<StatefulWidget> createState() => new WorkoutPlanState();
 }
@@ -31,6 +36,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
 {
   ScrollController controller = ScrollController();
   double topContainer = 0;
+  String userId;
   
   bool closeTopContainer = false;
   
@@ -44,22 +50,25 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   List<DateTime> startingEndingDates = new List(2);
   List<ClientExercise> responseList = new List();
 
-  UserExercise currentExercise;
-  List<UserExercise> userExercises = [];
+  ExerciseDetails currentExercise;
+  List<ExerciseDetails> userExercises = [];
+  List<ExerciseDetails> userExercisesToday = [];
   DateTime selectedDate = DateTime.now();
 
 
  @override
   void initState(){
       super.initState();
-      getExerciseData(DateTime.now().subtract(Duration(days: 7)),DateTime.now().add(Duration(days: 7)));
+      if(widget.visitedWorkout != null)
+        getExerciseData(DateTime.now().subtract(Duration(days: 7)),DateTime.now().add(Duration(days: 7)));
+      
       calendarController = CalendarController();
       //calendarController.setCalendarFormat(CalendarFormat.week);
       events = {};
       selectedEvents = [];
 
-      final selectedDay = DateTime.now();
-
+      final selectedDay = new DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      selectedDate = selectedDay;
       //events[selectedDay] = [exercisesData[0],exercisesData[1],exercisesData[2]];
       //events[selectedDay.subtract(Duration(days: 2))] = [exercisesData[3],exercisesData[2],exercisesData[1]];
 
@@ -71,15 +80,32 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         duration: const Duration(milliseconds: 400),
       );
 
-      animationController.forward();
-      
 
+      for (int i = 0; i < userExercisesToday.length; i++)
+      {
+        var now =DateTime.now();
+        DateTime todayFirst = new DateTime(now.year, now.month, now.day);
+        DateTime todayLast =  new DateTime(now.year, now.month, now.day,23,59,59);
+        var histories = findHistories(userExercisesToday[i], todayFirst, todayLast);
+      }
+
+
+      animationController.forward();
+      setUser();
+
+
+  }
+
+  void setUser() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString("userId");
   }
 
   void addCurrentWindowEvents()
   {
     setState(() {
       events.clear();
+      print("events: " + exercisesData.length.toString());
       for(int i = 0; i < exercisesData.length; i++){
         addEvent(responseList[i].date, exercisesData[i]);
       }
@@ -89,12 +115,13 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   
   void addEvent(DateTime date,Widget widget)
   {
-    if(!events.containsKey(date))
+    DateTime first = new DateTime(date.year, date.month, date.day);
+    if(!events.containsKey(first))
     {
-      events[date] = [widget];
+      events[first] = [widget];
     }
     else{
-      events[date].add(widget);
+      events[first].add(widget);
     }
   }
 
@@ -104,13 +131,14 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-    print(res);
   }
+
 
   onSelect() {
 
     loadModel();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercises)));
+    //DateTime.parse(DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(userExercisesToday[exerciseToMakeIx],nextExercise,widget.visitedWorkout)));
     
   }
 
@@ -122,16 +150,36 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     super.dispose();
   }
 
-  List<DateTime> findRepetitions(UserExercise userExercise, DateTime first, DateTime last)
+  List<History> findHistories(ExerciseDetails userExercise, DateTime first, DateTime last)
     {
-      var startingDate = userExercise.startDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? userExercise.startDate : first;
-      var endingDate = userExercise.endDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : userExercise.endDate;
+      var startingDate = widget.visitedWorkout.startingDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? widget.visitedWorkout.startingDate : first;
+      var endingDate = widget.visitedWorkout.endingDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : widget.visitedWorkout.endingDate;
+     
 
+      List<History> recurrentDates = [];
+      for (int i = 0; i <userExercise.history.length; i++){
+        
+        var history = userExercise.history[i];
+        if(history.creationDate.isAfter(startingDate.subtract(startingDate.timeZoneOffset)) && history.creationDate.isBefore(endingDate.toUtc())){
+          recurrentDates.add(history);
+        }
+      }
+      return recurrentDates; 
+
+    }
+
+  List<DateTime> findRepetitions(ExerciseDetails userExercise, DateTime first, DateTime last)
+    {
+
+      var startingDate = widget.visitedWorkout.startingDate.millisecondsSinceEpoch > first.millisecondsSinceEpoch ? widget.visitedWorkout.startingDate : first;
+      var endingDate = widget.visitedWorkout.endingDate.millisecondsSinceEpoch > last.millisecondsSinceEpoch ? last : widget.visitedWorkout.endingDate;
       var currentDate = startingDate;
+
       List<DateTime> recurrentDates = [];
-      while (currentDate.millisecondsSinceEpoch < endingDate.millisecondsSinceEpoch) 
+      while (currentDate.millisecondsSinceEpoch <= endingDate.millisecondsSinceEpoch) 
       {
-          if(userExercise.recurrentDays.contains(currentDate.weekday))
+
+          if(userExercise.recurrentDays.contains(currentDate.weekday-1))
           {
             recurrentDates.add(currentDate); 
           }
@@ -141,10 +189,8 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
     }
 
 
-  Future<http.Response> getExercises(DateTime first, DateTime last)
+  Future<http.Response> getExercises()
   async {
-    String dateFirst = formatDate(first,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
-    String dateLast = formatDate(last,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var headers = {
@@ -152,8 +198,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var url = Constants.webPath + "users/" + prefs.getString("userId")+ "/exercise-by-date?startDate=$dateFirst&endDate=$dateLast";
-    print(url);
+    var url = Constants.webPath + "workouts/" + widget.visitedWorkout.id+ "/exerciseSets";
     //-by-date?startDate=$dateFirst&endDate=$dateLast
     return http.get(url, headers: headers);
   }
@@ -161,47 +206,59 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   void getExerciseData(DateTime first, DateTime last) async
   {
     responseList.clear();
-    var getData = (await getExercises(first, last)).body;
-    print(getData);
-    var exercisesRaw = jsonDecode(getData)["data"] as List;
+    var getData = (await getExercises()).body;
+
+    var exercisesRaw = jsonDecode(getData) as List;
     userExercises.clear();
+    userExercisesToday.clear();
     for(int i = 0; i < exercisesRaw.length; i++)
     {
-      userExercises.add(UserExercise.fromJson(exercisesRaw[i]));
+      userExercises.add(ExerciseDetails.fromJson(exercisesRaw[i]));
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
-      var dates = findRepetitions(userExercises[i], first, last);
-      print(dates);
+      DateTime todayFirst = new DateTime(first.year, first.month, first.day);
+      DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
+      var dates = findRepetitions(userExercises[i], todayFirst, todayLast);
       for(int j = 0; j < dates.length; j++)
       {
-        var curExercise = userExercises[i].exerciseDetails.exercise;
-        var exerciseDetails = userExercises[i].exerciseDetails;
-        responseList.add(ClientExercise(curExercise.name, curExercise.difficulty, exerciseDetails.repeat, exerciseDetails.setCount, dates[j]));
+        var curExercise = userExercises[i].exercise;
+        var exerciseDetails = userExercises[i];
+        print("setcount: ${exerciseDetails.setCount}");
+
+        if(isSameDay(DateTime.now(), dates[j])){
+          userExercisesToday.add(userExercises[i]);
+        }
+
+        responseList.add(ClientExercise(exerciseDetails, dates[j]));
       }
     }
 
     
 
     List<Widget> listItems = [];
+    int index = 0;
     responseList.forEach((post) {
+      //bool disabled = index < exerciseToMakeIx && isSameDay(post.date,DateTime.now());
+      bool disabled = false;
       listItems.add(
-        
-        exerciseItem(post)
-        
+        exerciseItem(post,disabled)
       );
+      index++;
     });
     setState(() {
       exercisesData = listItems;
     });
     addCurrentWindowEvents();
+    if(selectedDate.compareTo(first) >= 0 && selectedDate.compareTo(last) <=0 )
+      selectedEvents = events[selectedDate];
   }
 
-  Widget exerciseItem(ClientExercise post){
+  Widget exerciseItem(ClientExercise post, bool disabled){
     return Container(
           height: 150,
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: Colors.white, boxShadow: [
+          decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20.0)), color: !disabled ? Colors.white : Colors.grey.shade200, boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 10.0),
           ]),
           child: Padding(
@@ -209,39 +266,50 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Image.asset(
-                  "assets/logo.png",
-                  height: 100,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      post.name,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    Text(
-                      formatDate(post.date,[d, '-', M, '-', yyyy, ' ', HH, ':', nn]),
-                      style: const TextStyle(fontSize: 17, color: Colors.grey),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      "${post.setCount} Sets x ${post.repCount} Repeats",
-                      style: const TextStyle(fontSize: 25, color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-
-                  ],
-                ),
+                Image.network(post.exerciseDetails.exercise.imageUrl,
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },),
+                SizedBox(width:4),
+                Expanded(child: 
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        post.exerciseDetails.exercise.name,
+                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        "${post.exerciseDetails.setCount} Sets \n${post.exerciseDetails.repeat} Repeats",
+                        style: const TextStyle(fontSize: 23, color: Colors.black, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.fade,
+                      ),
+                      disabled ? Text(
+                        "Done",
+                        style: const TextStyle(fontSize: 25, color: Colors.lightGreen, fontWeight: FontWeight.bold),
+                      ) : SizedBox(
+                        height: 10,
+                      ),
+                    ],
+                  ),
+                )
+                
                 
               ],
             ),
           ));
   }
 
-  bool canStartTheProgram(){
-    return selectedEvents != null && selectedEvents.length > 0 && isSameDay(selectedDate, DateTime.now());
+  bool canStartTheProgram() {
+    return selectedEvents != null && selectedEvents.length > 0 && isSameDay(selectedDate, DateTime.now()) && userId == widget.visitedUser.userId;
   }
 
   bool isSameDay(DateTime date1, DateTime date2){
@@ -251,6 +319,23 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
   bool isDayBefore(DateTime date1, DateTime date2)
   {
     return date1.year < date2.year || (date1.year == date2.year && date1.month < date2.month) || (date1.year == date2.year && date1.month == date2.month && date1.day < date2.day);
+  }
+
+  void selectDay(DateTime date, List<dynamic> events){
+    selectedDate = date;
+    try
+    {
+      widget.selectDay(date);
+    }
+    catch(exception)
+    {
+      print("no selected day event");
+    }
+    animationController.forward(from: 0.0);
+    setState(() {
+      selectedEvents = events;
+        },
+      );
   }
   
   @override
@@ -263,22 +348,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
             children: <Widget>[
               buildCalendar(),
               widget.isEventListActive ? buildEventList() : SizedBox(height:1),
-              SizedBox(
-                        width: size.width * 4/5,
-                        child:  canStartTheProgram() ? RaisedButton(
-                          onPressed: () {
-                            onSelect();
-                            },
-                          color:  Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                            side: BorderSide(color: Colors.black)
-                          ),
-                          child: Text("Start The Program", style : TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)
-                          ),
-                        ) : SizedBox(),
-                      ),
-              SizedBox(height: 20)
+              
             ],
           ),
         );
@@ -305,27 +375,16 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         setState(() {
             startingEndingDates[0] = first;
           startingEndingDates[1] = last;
-          getExerciseData(first, last);
+          if(widget.visitedWorkout != null)
+            getExerciseData(first, last);
           
         });
         
       },
       events: events,
       onDaySelected: (date, events,holidays) {
-        selectedDate = date;
-        try
-        {
-          widget.selectDay(date);
-        }
-        catch(exception)
-        {
-          print("no selected day event");
-        }
-        animationController.forward(from: 0.0);
-        setState(() {
-          selectedEvents = events;
-            },
-          );
+        
+        selectDay(date,events);
         },
       builders: CalendarBuilders(
       selectedDayBuilder: (context, date, _) {
@@ -409,7 +468,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
         children: <Widget>
         [
           Text(
-          'Blank Day',
+          'Day Off!',
           style: TextStyle().copyWith(
             color: Colors.black,
             fontSize: 36.0,
@@ -456,7 +515,7 @@ class WorkoutPlanState extends State<WorkoutPlanPage> with TickerProviderStateMi
                   );
             }, openBuilder: (_, closeContainer)
             {
-                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer);
+                return ExerciseCardPlan(CardType.exercise,currentExercise,closeContainer,canStartTheProgram(),widget.visitedWorkout);
             });
           }
         

@@ -1,12 +1,9 @@
 import 'dart:convert';
 import 'package:flutter_realtime_detection/constants.dart';
 import 'package:flutter_realtime_detection/enums/cardType.dart';
-import 'package:flutter_realtime_detection/exerciseModel.dart';
-import 'package:flutter_realtime_detection/makeExercise.dart';
+import 'package:flutter_realtime_detection/models/exerciseModel.dart';
 import 'package:flutter_realtime_detection/models.dart';
-import 'package:flutter_realtime_detection/savePoints.dart';
 import 'package:http/http.dart' as http;
-import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,18 +12,21 @@ import 'package:tflite/tflite.dart';
 import 'exerciseCards.dart';
 import 'package:animations/animations.dart';
 
-
+import 'models/user.dart';
+import 'models/workout.dart';
 
 
 class ExercisesPage extends StatefulWidget
-
 {
-
-  ExercisesPage();
+  final User visitedUser;
+  final Workout visitedWorkout;
+  ExercisesPage(this.visitedUser,this.visitedWorkout);
 
   @override
   State<StatefulWidget> createState() => new ExersisesState();
 }
+
+
 
 class ExersisesState extends State<ExercisesPage>
 {
@@ -39,15 +39,25 @@ class ExersisesState extends State<ExercisesPage>
   ScrollController controller = ScrollController();
   double topContainer = 0;
 
-
-
-  SavePoints savePoints;
-
   String currentExcersise = "";
   String model = posenet;
 
-  
   bool closeTopContainer = true;
+
+  @override
+  void initState() {
+    getExerciseData();
+    controller.addListener(() {
+
+      double value = controller.offset/119;
+
+      setState(() {
+        topContainer = value;
+        //closeTopContainer = controller.offset > 50;
+      });
+    });
+    super.initState();
+  }
 
 
   Future<http.Response> getExercises() async
@@ -65,17 +75,12 @@ class ExersisesState extends State<ExercisesPage>
   {
     var response = await getExercises();
     
-    exercisesDataRaw = jsonDecode(response.body)["data"] as List;
-    //print(exercisesDataRaw[0]);
+    exercisesDataRaw = jsonDecode(response.body) as List;
     exercisesDataRaw.forEach((element) {
       var exer  = Exercise.fromJson(element);
-      //print(exer.name);
-      //var exerciseDetails = ExerciseDetails(exer,element["repeat"],element["setCount"]);
       exercises.add(exer);
      });
 
-
-    //List<Map<String,String>> responseList = parsed.map<Map<String,String>>((json) => HashMap<String,String>.fromJson(json)).toList();
 
     List<Widget> listItems = [];
     exercises.forEach((post) {
@@ -118,10 +123,14 @@ class ExersisesState extends State<ExercisesPage>
                   "assets/exerciseImages/${post["image"]}",
                   height: double.infinity,
                 )*/
-                Image.asset(
-                  "assets/logo.png",
-                  height: double.infinity,
-                )
+                Image.network(post.imageUrl,
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
+                    return Image.asset(
+                    "assets/logo.png",
+                    height: double.infinity
+                    );
+                },)
+                
               ],
             ),
           )));
@@ -137,35 +146,10 @@ class ExersisesState extends State<ExercisesPage>
             model: "assets/posenet_mv1_075_float_from_checkpoints.tflite",
             numThreads: 4
             );
-    print(res);
-  }
-
-  onSelect(excersise,index) {
-    //currentExcersise = excersise;
-    curExercise = excersise;
-    
-
-    //loadModel();
-    //Navigator.push(context, MaterialPageRoute(builder: (context) => CameraPage(curExerciseFull,model)));
-    
   }
 
 
-  @override
-  void initState() {
-    getExerciseData();
-    controller.addListener(() {
 
-      double value = controller.offset/119;
-
-      setState(() {
-        topContainer = value;
-        //closeTopContainer = controller.offset > 50;
-      });
-    });
-    super.initState();
-  }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +184,8 @@ class ExersisesState extends State<ExercisesPage>
                           return GestureDetector(
                           onTap : () {  
                             setState(() {
+                              curExercise = exercises[index];
                               openContainer();
-                              onSelect(exercises[index], index);
                             });
                             },
                             child: Opacity(
@@ -222,7 +206,7 @@ class ExersisesState extends State<ExercisesPage>
                         },
                           openBuilder: (_, closeContainer)
                           {
-                              return ExerciseCard(CardType.exercise,curExercise,closeContainer);
+                              return ExerciseCard(CardType.exercise,curExercise,closeContainer,widget.visitedUser,widget.visitedWorkout);
                           },
                         );
                       })),

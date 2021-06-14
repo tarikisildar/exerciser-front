@@ -57,19 +57,21 @@ class _CustomDialogBoxState extends State<CustomDialogBox> {
               SizedBox(height: 22,),
               Align(
                 alignment: Alignment.bottomRight,
-                child: FlatButton(
+                child: RaisedButton(
                     onPressed: (){
                       Navigator.of(context).pop();
                     },
+                    color: Colors.white,
                     child: Text(widget.text1,style: TextStyle(fontSize: 18,color: Colors.black),)),
               ),
               Align(
                 alignment: Alignment.bottomRight,
-                child: FlatButton(
+                child: RaisedButton(
                     onPressed: (){
                       Navigator.of(context).pop();
                       widget.exitFunction();
                     },
+                    color: Colors.white,
                     child: Text(widget.text2,style: TextStyle(fontSize: 18,color: Colors.black),)),
               ),
             ],
@@ -83,7 +85,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox> {
               radius: Constants.avatarRadius,
               child: ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(Constants.avatarRadius)),
-                child: Image.asset("assets/exerciseImages/jumpingJack.jpg")
+                
               ),
             ),
         ),
