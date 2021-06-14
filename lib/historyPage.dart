@@ -4,13 +4,15 @@ import 'package:date_format/date_format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_realtime_detection/enums/ExerciseHistoryType.dart';
+import 'package:flutter_realtime_detection/models/exerciseDetails.dart';
+import 'package:flutter_realtime_detection/models/workout.dart';
 import 'package:flutter_realtime_detection/workoutPlan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
-import 'models/clientExercise.dart';
+import 'models/filteredExercise.dart';
 import 'models/history.dart';
 import 'models/user.dart';
 import 'models/userExercise.dart';
@@ -18,8 +20,8 @@ import 'models/userExercise.dart';
 
 class HistoryPage extends WorkoutPlanPage
 {
-  HistoryPage(bool isEventListActive, CalendarFormat calendarFormat, Function selectDay, DateTime startDay,User visitedUser) : 
-  super(isEventListActive, calendarFormat, selectDay, startDay, visitedUser);
+  HistoryPage(bool isEventListActive, CalendarFormat calendarFormat, Function selectDay, DateTime startDay,User visitedUser,Workout visitedWorkout) : 
+  super(isEventListActive, calendarFormat, selectDay, startDay, visitedUser,visitedWorkout);
   @override
   State<StatefulWidget> createState() => new HistoryState();
   
@@ -29,14 +31,9 @@ class HistoryState extends WorkoutPlanState
 {
   
   @override
-  Future<http.Response> getExercises(DateTime first, DateTime last)
+  Future<http.Response> getExercises()
   async 
   {
-
-    DateTime todayFirst = new DateTime(first.year, first.month, first.day);
-    DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
-    String dateFirst = formatDate(todayFirst,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
-    String dateLast = formatDate(todayLast,[yyyy, '-', mm, '-', d, ' ', HH, ':', nn, ':', ss]);
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var headers = {
@@ -44,14 +41,13 @@ class HistoryState extends WorkoutPlanState
               'Accept': 'application/json',
               'authorization' : prefs.getString("token")
             };
-    var url = Constants.webPath + "users/" + widget.visitedUser.userId+ "/exercise-history-by-date?startDate=$dateFirst&endDate=$dateLast";
-    print(url);
+    var url = Constants.webPath + "workouts/" + widget.visitedWorkout.id+ "/exerciseSets";
     //-by-date?startDate=$dateFirst&endDate=$dateLast
     return http.get(url, headers: headers);
   }
 
   @override
-  List<History> findHistories(UserExercise userExercise, DateTime first, DateTime last)
+  List<History> findHistories(ExerciseDetails userExercise, DateTime first, DateTime last)
     {
       return super.findHistories(userExercise,first,last);
     }
@@ -60,28 +56,25 @@ class HistoryState extends WorkoutPlanState
   void getExerciseData(DateTime first, DateTime last) async
   {
     responseList.clear();
-    var getData = (await getExercises(first, last)).body;
-    print(getData);
-    var exercisesRaw = jsonDecode(getData)["data"] as List;
+    var getData = (await getExercises()).body;
+    var exercisesRaw = jsonDecode(getData) as List;
+
     userExercises.clear();
     for(int i = 0; i < exercisesRaw.length; i++)
     {
-      userExercises.add(UserExercise.fromJson(exercisesRaw[i]));
+      userExercises.add(ExerciseDetails.fromJson(exercisesRaw[i]));
     } 
     for(int i = 0; i < userExercises.length; i++)
     {
       DateTime todayFirst = new DateTime(first.year, first.month, first.day);
       DateTime todayLast =  new DateTime(last.year, last.month, last.day,23,59,59);
       var histories = super.findHistories(userExercises[i], todayFirst, todayLast);
-      print("hisLEngth " + histories.length.toString());
       for(int j = 0; j < histories.length; j++)
       {
-        var curExercise = userExercises[i].exerciseDetails.exercise;
-        var exerciseDetails = userExercises[i].exerciseDetails;
-        responseList.add(ClientExercise(curExercise.name, curExercise.difficulty, exerciseDetails.repeat, exerciseDetails.setCount, histories[j].creationDate,history: histories[j]));
+        var exerciseDetails = userExercises[i];
+        responseList.add(ClientExercise(exerciseDetails, histories[j].creationDate,history: histories[j]));
       }
     }
-    print("resLEngth " + responseList.length.toString());
 
     List<Widget> listItems = [];
     responseList.forEach((post) {
@@ -116,37 +109,44 @@ class HistoryState extends WorkoutPlanState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                post.history.type == ExerciseHistoryType.uncompleted ? Icon ( Icons.remove, color: Colors.black) :
-                (post.history.repeat - post.repCount).abs() > 0.25 * post.repCount ? Icon(Icons.cancel, color: Colors.red) : 
+                post.history.status == ExerciseHistoryType.UNCOMPLETED ? Icon ( Icons.remove, color: Colors.black) :
+                post.history.status == ExerciseHistoryType.FAILED ? Icon(Icons.cancel, color: Colors.red) : 
                 Icon ( Icons.check, color: Colors.green),
-                Image.network("http://165.22.67.71:5002/files/${post.name.toLowerCase().replaceAll(' ', '')}.jpg",
+                Image.network(post.exerciseDetails.exercise.imageUrl,
                   errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace){
                     return Image.asset(
                     "assets/logo.png",
                     height: double.infinity
                     );
                 },),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      post.name,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    Text(
-                      formatDate(post.date,[d, '-', M, '-', yyyy, ' ', HH, ':', nn]),
-                      style: const TextStyle(fontSize: 17, color: Colors.grey),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      "${post.history.repeat} / ${post.repCount} Repeats",
-                      style: const TextStyle(fontSize: 17, color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
+                Expanded(child:
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        post.exerciseDetails.exercise.name,
+                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      Text(
+                        formatDate(post.date.toLocal(),[d, '-', M, '-', yyyy, ' ', HH, ':', nn]),
+                        style: const TextStyle(fontSize: 17, color: Colors.grey),
+                        overflow: TextOverflow.fade,
+                        maxLines: 1,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        "${post.history.repeat} / ${post.exerciseDetails.repeat} Repeats",
+                        style: const TextStyle(fontSize: 17, color: Colors.black, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.fade
+                      ),
 
-                  ],
-                ),
+                    ],
+                  ),
+                )
                 
               ],
             ),
